@@ -20,6 +20,3 @@ packet = ip/tcp
 
 # "Enviamos" el paquete
 f.envio_paquetes_inseguro(packet)
-
-# comentario
-# otro comentario
