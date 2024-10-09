@@ -11,7 +11,7 @@ src_port = 5000
 ip = IP(dst=dest_ip, src=source_ip)
 
 # Creamos la parte de TCP
-tcp = TCP(dport=dest_port, sport=src_port)
+tcp = TCP(dport=dest_port, sport=src_port, flags="S")
 
 
 # Los combinamos
@@ -20,3 +20,6 @@ packet = ip/tcp
 
 # "Enviamos" el paquete
 f.envio_paquetes_inseguro(packet)
+
+
+def envio_paquetes_seguro(packet, )
