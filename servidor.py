@@ -26,7 +26,7 @@ def escuchar(timeout_):
     print(conf.ifaces)
 
 # Esto lo tienen que completar con el nombre de la interfaz que tenga el 127.0.0.1 si se recibe el paquete en la misma computadora que lo envio.
-    interface = "Software Loopback Interface 1"
+    interface = "lo0"
 
     listen_port = 8000  # Elegir el puerto que esta escuchando
 
@@ -62,3 +62,4 @@ time.sleep(timer_)
 #f timer_ == 20:
 #    f.envio_paquetes_inseguro(enviar_pkt(tcp_pkt.ack, tcp_pkt.seq, "F"))
 
+# print(pkt_capturado.stats)
