@@ -16,7 +16,6 @@ def info_packet(packet):
     print(f"#SEQ: {packet[0][TCP].seq}")
     print(f"#ACK: {packet[0][TCP].ack}")
     print(f"Checksum {packet[0][TCP].chksum}\n")
-    print(f"Checksum: {packet[0][TCP].chksum}\n")
 
 def enviar_pkt(seq_a, ack_a, flags_):
     ip = IP(dst=dest_ip, src=source_ip)
@@ -36,20 +35,10 @@ def escuchar(timeout_):
     filter_str = f"tcp port {listen_port}"
 
     pkt_capturado = sniff(
-        iface=interface, prn=lambda x: info_packet, count=1, timeout=timeout_, filter=filter_str,)
+        iface=interface, prn=info_packet, count=1, timeout=timeout_, filter=filter_str,)
     return pkt_capturado
 
 
-
-    
-
-# Escuchar en ese puerto
-    
-    pkt_capturado = sniff(iface=interface, filter=filter_str,
-                        prn=lambda x: x.show(), count=1, timeout=timeout_)
-    
-
-    return pkt_capturado
 
 
 tcp_pkt = escuchar(60)
