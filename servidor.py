@@ -9,6 +9,15 @@ dest_port = 5000
 src_port = 8000
 seq_ = 5
 
+def info_packet(packet):
+    print(f"\nSource port: {packet[0][TCP].sport}")
+    print(f"Destination port: {packet[0][TCP].dport}")
+    print(f"Flags: {packet[0][TCP].flags}")
+    print(f"#SEQ: {packet[0][TCP].seq}")
+    print(f"#ACK: {packet[0][TCP].ack}")
+    print(f"Checksum {packet[0][TCP].chksum}\n")
+    print(f"Checksum: {packet[0][TCP].chksum}\n")
+
 def enviar_pkt(seq_a, ack_a, flags_):
     ip = IP(dst=dest_ip, src=source_ip)
 
@@ -19,19 +28,20 @@ def enviar_pkt(seq_a, ack_a, flags_):
     packet = ip/tcp
     return packet
 
-
 def escuchar(timeout_):
-
-# Mostramos todas las interfaces
-    print(conf.ifaces)
-
-# Esto lo tienen que completar con el nombre de la interfaz que tenga el 127.0.0.1 si se recibe el paquete en la misma computadora que lo envio.
-    interface = "lo0"
+    interface = "Software Loopback Interface 1"
 
     listen_port = 8000  # Elegir el puerto que esta escuchando
-
     print(f"Listening for TCP packets on port {listen_port}...")
     filter_str = f"tcp port {listen_port}"
+
+    pkt_capturado = sniff(
+        iface=interface, prn=lambda x: info_packet, count=1, timeout=timeout_, filter=filter_str,)
+    return pkt_capturado
+
+
+
+    
 
 # Escuchar en ese puerto
     
