@@ -26,8 +26,8 @@ interface = "lo0"
 def listen(listen_port):
     print(f"Listening for TCP packets on port {listen_port}...")
     pkt_capturado = sniff(
-        iface=interface, prn=info_packet, count=1, timeout=60, lfilter=filter_function_server)
+        iface=interface, filter='tcp port 9000', prn=info_packet, count=1, timeout=60)
     return pkt_capturado
 
 
-listen(8000)
+listen(9000)
