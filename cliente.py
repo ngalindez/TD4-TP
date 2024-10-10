@@ -22,4 +22,4 @@ packet = ip/tcp
 f.envio_paquetes_inseguro(packet)
 
 
-def envio_paquetes_seguro(packet, )
+#def envio_paquetes_seguro(packet,)

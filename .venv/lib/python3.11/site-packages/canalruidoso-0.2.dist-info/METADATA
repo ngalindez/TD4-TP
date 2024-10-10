@@ -1,0 +1,9 @@
+Metadata-Version: 2.1
+Name: canalruidoso
+Version: 0.2
+Summary: A simple library with foo function
+Author: Valentín Bonás y Jaime Amigo
+Author-email: jaimeamigoUTDT@mail.utdt.edu
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+
