@@ -4,6 +4,8 @@ import canalruidoso as f  # Correr pip install canalruidoso en la terminal
 import time
 
 def info_packet(packet):
+    packet.show2()
+
     print(f"\nSource port: {packet[0][TCP].sport}")
     print(f"Destination port: {packet[0][TCP].dport}")
     print(f"Flags: {packet[0][TCP].flags}")
@@ -21,13 +23,12 @@ def enviar_pkt(seq_a, ack_a, flags_, dest_ip, source_ip, dest_port, src_port, se
     packet = ip/tcp
     return packet
 
-def escuchar(timeout_):
+def escuchar(timeout_, puerto_):
     interface = "Software Loopback Interface 1"
 
-    listen_port = 8000  # Elegir el puerto que esta escuchando
-    print(f"Listening for TCP packets on port {listen_port}...")
-    filter_str = f"tcp port {listen_port}"
+    print(f"Listening for TCP packets on port {puerto_}...")
+    filter_str = f"tcp port {puerto_}"
 
     pkt_capturado = sniff(
-        iface=interface, prn=info_packet, count=1, timeout=timeout_, filter=filter_str,)
+        iface=interface, prn=info_packet, count=1, timeout=timeout_, lfilter=filter_str,)
     return pkt_capturado
