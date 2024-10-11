@@ -10,10 +10,17 @@ tcp_pkt = escuchar(60, src_port)
 
 if tcp_pkt:
     seq_1 = tcp_pkt[0][TCP].seq
+    tcp_pkt = None
     
-    tcp_pkt.clear
-    while not tcp_pkt or (TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack <= seq_ + 1):
-        f.envio_paquetes_inseguro(enviar_pkt(seq_, seq_1, "SA", dest_ip, source_ip, dest_port, src_port, seq_))
+    while not tcp_pkt or (TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack < seq_ + 1):
+        enviar_thread = threading.Thread(
+        target=f.envio_paquetes_inseguro,  # Pasamos la función sin ejecutar
+        args=(enviar_pkt(seq_, seq_1, "SA", dest_ip, source_ip, dest_port, src_port),)  # Pasamos los argumentos a la función
+        )
+    
+    # Inicia el hilo de envío de paquetes
+        enviar_thread.start()
+
         tcp_pkt = escuchar(3, src_port)
 
             

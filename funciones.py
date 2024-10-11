@@ -13,11 +13,11 @@ def info_packet(packet):
     print(f"#ACK: {packet[0][TCP].ack}")
     print(f"Checksum {packet[0][TCP].chksum}\n")
 
-def enviar_pkt(seq_a, ack_a, flags_, dest_ip, source_ip, dest_port, src_port, seq_inicial):
+def enviar_pkt(seq_a, ack_a, flags_, dest_ip, source_ip, dest_port, src_port):
     ip = IP(dst=dest_ip, src=source_ip)
 
     # Creamos la parte de TCP
-    tcp = TCP(dport=dest_port, sport=src_port, flags = flags_, seq = 2*seq_inicial - seq_a, ack = ack_a + 1)
+    tcp = TCP(dport=dest_port, sport=src_port, flags = flags_, seq = seq_a, ack = ack_a + 1)
 
     # Los combinamos
     packet = ip/tcp
