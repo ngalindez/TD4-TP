@@ -5,31 +5,17 @@ from funciones import *
 import time
 
 # Parámetros
-src_ip = '127.0.0.1'
-dest_ip = '127.0.0.1'
-src_port = 9000
-dest_port = 6000
+_src_ip = '127.0.0.1'
+_dest_ip = '127.0.0.1'
+_src_port = 9000
+_dest_port = 6000
+_interface = 'lo0'
 
-while not pkt or pkt[TCP].flags != 'S':
-    pkt = listen(9000, 'server')
+servidor = SocketRDT(_src_ip, _src_port, _dest_ip, _dest_port, _interface)
 
-# SYN + ACK
-envio_paquetes_seguro('SA', 9000, 6000, last_pkt=pkt)
-
-while not pkt[TCP].flags == 'A':
-    pkt = listen(9000, 'server')
-
-# ya recibí un paquete con ACK, arranco el timer de conexión
-ahora = time.time()
-
-while time.time() < ahora + 20:
-    ...
-
-# Cierre de conexión, FIN
-envio_paquetes_seguro('F', 9000, 6000, last_pkt=pkt)
-
-while not pkt[TCP].flags == 'FA':
-    pkt = listen(9000, 'server')
-
-# ACK final
-envio_paquetes_seguro('A', 9000, 6000, last_pkt=pkt)
+# pkt = servidor.listen()
+while servidor.last_pkt_rcvd == None:
+    pkt = servidor.listen()
+# servidor.envio_paquetes_seguro('A')
+# servidor.listen()
+servidor.terminar_conexion()
