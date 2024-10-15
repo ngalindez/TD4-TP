@@ -45,7 +45,7 @@ class SocketRDT:
         self.last_pkt_rcvd = pkt_capturado[0]
 
         # Para asegurarme de que recibí el que quiero
-        # is self.last_pkt_sent es None, self.last_pkt_rcvd es el primero que recibo
+        # si self.last_pkt_sent == None, self.last_pkt_rcvd es el primero que recibo
         SEQ_esperado = self.last_pkt_rcvd[TCP].ack if self.last_pkt_sent is None else self.last_pkt_sent[TCP].seq + 1
         if self.last_pkt_rcvd[TCP].ack != SEQ_esperado:
             self.listen()
@@ -62,8 +62,8 @@ class SocketRDT:
         # Para el cierre de conexión
         if self.last_pkt_rcvd[TCP].flags == 'F' and self.conn_established:
             self.envio_paquetes_seguro(_flags='FA')
+            self.listen()
 
-            # Ahora el self.last_pkt_rcvd fue actualizado por envio_paquetes_seguro
             if self.last_pkt_rcvd[TCP].flags == 'A':
                 self.conn_established = False
 
