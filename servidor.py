@@ -13,9 +13,10 @@ _interface = 'lo0'
 
 servidor = SocketRDT(_src_ip, _src_port, _dest_ip, _dest_port, _interface)
 
-# pkt = servidor.listen()
 while servidor.last_pkt_rcvd == None:
     pkt = servidor.listen()
-# servidor.envio_paquetes_seguro('A')
-# servidor.listen()
-servidor.terminar_conexion()
+if servidor.conn_established:
+    for i in range(5):
+        servidor.envio_paquetes_seguro('A')
+        servidor.listen()
+    servidor.terminar_conexion()

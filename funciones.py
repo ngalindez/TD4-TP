@@ -4,22 +4,7 @@ import canalruidoso as f
 import time
 
 
-# Elegimos #SEQ aleatorio para el primer paquete
-rand = random.randint(0, 1024)
-
-char2flag = {'S': 'SYN', 'A': 'ACK', 'F': 'FIN',
-             'SA': 'SYN + ACK', 'FA': 'FIN + ACK', 'RST': 'RESET'}
-
-
 class SocketRDT:
-
-    def info_packet(self, packet):
-        print(f"\nSource port: {packet[TCP].sport}")
-        print(f"Destination port: {packet[TCP].dport}")
-        print(f"Flags: {packet[TCP].flags}")
-        print(f"#SEQ: {packet[TCP].seq}")
-        print(f"#ACK: {packet[TCP].ack}")
-        print(f"Checksum: {packet[TCP].chksum}\n")
 
     def __init__(self, src_ip, src_port, dest_ip, dest_port, interface):
         self.src_ip = src_ip
@@ -31,8 +16,25 @@ class SocketRDT:
         self.last_pkt_sent = None
         self.conn_established = False
 
+    def info_packet(self, packet):
+        print(f"\nSource port: {packet[TCP].sport}")
+        print(f"Destination port: {packet[TCP].dport}")
+        print(f"Flags: {packet[TCP].flags}")
+        print(f"#SEQ: {packet[TCP].seq}")
+        print(f"#ACK: {packet[TCP].ack}")
+        print(f"Checksum: {packet[TCP].chksum}\n")
+
     def filter_function(self, packet):
         return packet.haslayer(TCP) and packet[TCP].dport == self.src_port
+
+    def verify_checksum(packet):
+        # extraigo el checksum del paquete que me llegó
+        chksum0 = packet[TCP].chksum
+        packet[TCP].chksum = None  # borro el valor viejo del paquete
+        packet.build()  # recalculo el checksum
+        chksum1 = packet[TCP].chksum
+
+        return chksum0 == chksum1
 
     def listen(self):
         print(f"Listening for TCP packets on port {self.src_port}...")
@@ -46,23 +48,41 @@ class SocketRDT:
 
         # Para asegurarme de que recibí el que quiero
         # si self.last_pkt_sent == None, self.last_pkt_rcvd es el primero que recibo
-        SEQ_esperado = self.last_pkt_rcvd[TCP].ack if self.last_pkt_sent is None else self.last_pkt_sent[TCP].seq + 1
-        if self.last_pkt_rcvd[TCP].ack != SEQ_esperado:
+        ACK_esperado = self.last_pkt_rcvd[TCP].ack if self.last_pkt_sent is None else self.last_pkt_sent[TCP].seq + 1
+
+        if self.last_pkt_rcvd[TCP].ack != ACK_esperado or not self.verify_checksum(self.last_pkt_rcvd):
+            # Este paquete va a hacer de "último paquete recibido correctamente" para que el paquete que reenvio tenga #SEQ y #ACK correctos
+            _last_pkt = IP()/TCP()
+            _last_pkt[TCP].ack = self.last_pkt_sent[TCP].seq
+            _last_pkt[TCP].seq = self.last_pkt_sent[TCP].ack - 1
+
+            # Si me llegó un #ACK que no esperaba o el paquete está corrupto, reenvio el último paquete
+            self.envio_paquetes_seguro(
+                self.last_pkt_sent[TCP].flags, last_pkt=_last_pkt)
             self.listen()
 
         # Para el three-way-handshake
         if self.last_pkt_rcvd[TCP].flags == 'S' and not self.conn_established:
 
-            self.envio_paquetes_seguro(_flags='SA')
-            self.listen()
+            # Elijo un #SEQ random para el servidor
+            rand_SEQ = random.randint(0, 1024)
+            # se lo cambio a self.last_pkt_rcvd para no tener que cambiar toda la función. Después funciona normal
+            self.last_pkt_rcvd[TCP].ack = rand_SEQ
+
+            # Mando un SA y espero que me llegue un A
+            while self.last_pkt_rcvd[TCP].flags != 'A':
+                self.envio_paquetes_seguro(_flags='SA', )
+                self.listen()
 
             if self.last_pkt_rcvd[TCP].flags == 'A':
                 self.conn_established = True
 
         # Para el cierre de conexión
         if self.last_pkt_rcvd[TCP].flags == 'F' and self.conn_established:
-            self.envio_paquetes_seguro(_flags='FA')
-            self.listen()
+            # Mando un FA y espero a que me llegue un A
+            while self.last_pkt_rcvd[TCP].flags != 'A':
+                self.envio_paquetes_seguro(_flags='FA')
+                self.listen()
 
             if self.last_pkt_rcvd[TCP].flags == 'A':
                 self.conn_established = False
@@ -84,11 +104,11 @@ class SocketRDT:
         self.last_pkt_sent = packet
 
     def iniciar_conexion(self):
-        # Elegimos #SEQ aleatorio para el primer paquete, lo guardo como atributo para otro caso
-        self.rand_SEQ = random.randint(0, 1024)
+        # Elegimos #SEQ aleatorio para el primer paquete
+        rand_SEQ = random.randint(0, 1024)
         self.envio_paquetes_seguro(
             _flags='S',
-            last_pkt=IP()/TCP(seq=-1, ack=self.rand_SEQ))
+            last_pkt=IP()/TCP(seq=-1, ack=rand_SEQ))
 
         while self.last_pkt_rcvd == None or (self.last_pkt_rcvd[TCP].flags != 'SA'):
             self.listen()
@@ -99,8 +119,10 @@ class SocketRDT:
     def terminar_conexion(self):
         if not self.conn_established:
             return
+
         self.envio_paquetes_seguro(_flags='F')
         while self.last_pkt_rcvd[TCP].flags != 'FA':
             self.listen()
 
         self.envio_paquetes_seguro(_flags='A')
+        self.conn_established = False

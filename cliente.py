@@ -11,7 +11,6 @@ _interface = 'lo0'
 
 cliente = SocketRDT(_src_ip, _src_port, _dest_ip, _dest_port, _interface)
 cliente.iniciar_conexion()
-print(cliente.conn_established)
 while cliente.conn_established:
     cliente.listen()
     if not cliente.conn_established:
