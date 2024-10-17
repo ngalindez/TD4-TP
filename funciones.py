@@ -2,7 +2,7 @@ from scapy.all import TCP, IP
 from scapy.all import *
 import canalruidoso as f  # Correr pip install canalruidoso en la terminal
 import time
-import threading
+
 
 def info_packet(packet):
     print(f"Flags: {packet[0][TCP].flags}")
@@ -13,12 +13,9 @@ def info_packet(packet):
 
 def enviar_pkt(seq_a, ack_a, flags_, dest_ip, source_ip, dest_port, src_port):
     ip = IP(dst=dest_ip, src=source_ip)
-
-    # Creamos la parte de TCP
-    tcp = TCP(dport=dest_port, sport=src_port, flags = flags_, seq = seq_a, ack = ack_a + 1)
-
-    # Los combinamos
+    tcp = TCP(dport=dest_port, sport=src_port, flags=flags_, seq=seq_a, ack=ack_a)
     packet = ip/tcp
+    info_packet(packet)
     return packet
 
 def escuchar(timeout_, puerto_):
