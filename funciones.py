@@ -8,7 +8,16 @@ def info_packet(packet):
     print(f"Flags: {packet[0][TCP].flags}")
     print(f"#SEQ: {packet[0][TCP].seq}")
     print(f"#ACK: {packet[0][TCP].ack}")
+    print(f"#Checksum: {packet[0][TCP].chksum}")
 
+def verify_checksum(packet):
+        # extraigo el checksum del paquete que me llegó
+    chksum0 = packet[TCP].chksum
+    packet[TCP].chksum = None  # borro el valor viejo del paquete
+    packet = packet.__class__(bytes(packet))  # recalculo el checksum
+    chksum1 = packet[TCP].chksum
+    print(f"#Checksum calculado: {packet[TCP].chksum}")
+    return chksum0 == chksum1
 
 
 def enviar_pkt(seq_a, ack_a, flags_, dest_ip, source_ip, dest_port, src_port):
