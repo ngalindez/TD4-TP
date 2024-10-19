@@ -55,13 +55,18 @@ class SocketRDT:
             iface=self.interface,
             prn=self.info_packet,
             count=1,
-            timeout=60,
+            timeout=30,
             lfilter=self.filter_function)
         self.last_pkt_rcvd = pkt_capturado[0]
 
+        # Si no recibí nada, salgo de la función AJUSTAR
+        if not pkt_capturado:
+            return
+
         if not self.verify_checksum(self.last_pkt_rcvd):
             self.proporciones['Corrupto'] += 1
-            self.reenviar_ultimo()
+            print('Paquete corrupto')
+            # self.reenviar_ultimo()
             self.listen()
 
         # Para asegurarme de que recibí el que quiero
@@ -69,7 +74,7 @@ class SocketRDT:
         ACK_esperado = self.last_pkt_rcvd[TCP].ack if self.last_pkt_sent is None else self.last_pkt_sent[TCP].seq + 1
 
         if self.last_pkt_rcvd[TCP].ack != ACK_esperado:
-            self.reenviar_ultimo()
+            # self.reenviar_ultimo()
             self.listen()
 
         self.proporciones['Normal'] += 1
@@ -101,7 +106,7 @@ class SocketRDT:
                 self.conn_established = False
                 print('Connection closed')
 
-        return self.last_pkt_rcvd
+        return pkt_capturado[0]
 
     def envio_paquetes_seguro(self, _flags, last_pkt=None):
         # Armo el paquete con las partes IP y TCP

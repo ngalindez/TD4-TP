@@ -12,7 +12,11 @@ _interface = 'lo0'
 cliente = SocketRDT(_src_ip, _src_port, _dest_ip, _dest_port, _interface)
 cliente.iniciar_conexion()
 while cliente.conn_established:
-    cliente.listen()
+    pkt_capturado = cliente.listen()
+    if pkt_capturado == None:
+        cliente.proporciones['Demorado'] += 1
+        print('Paquete demorado')
+        continue # Sigue a la siguiente iteración del ciclo
     if not cliente.conn_established:
         break
     cliente.envio_paquetes_seguro('A')
