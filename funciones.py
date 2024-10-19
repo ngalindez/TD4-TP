@@ -29,13 +29,13 @@ class SocketRDT:
     def filter_function(self, packet):
         return packet.haslayer(TCP) and packet[TCP].dport == self.src_port
 
-    def verify_checksum(packet):
+    def verify_checksum(self, packet):
         # extraigo el checksum del paquete que me llegó
         chksum0 = packet[TCP].chksum
-
         packet[TCP].chksum = None  # borro el valor viejo del paquete
-
-        chksum1 = sum(bytes(packet[TCP]))
+        packet = packet.__class__(bytes(packet))  # recalculo el checksum
+        chksum1 = packet[TCP].chksum
+        print(f"#Checksum calculado: {packet[TCP].chksum}")
 
         return chksum0 == chksum1
 
@@ -113,9 +113,6 @@ class SocketRDT:
                   seq=last_pkt[TCP].ack,
                   ack=last_pkt[TCP].seq + 1)
         packet = ip/tcp
-
-        en_bytes = bytes(packet)
-        packet[TCP].chksum = sum(en_bytes)
 
         f.envio_paquetes_inseguro(packet)
         self.last_pkt_sent = packet
