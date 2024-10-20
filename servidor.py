@@ -13,10 +13,17 @@ _interface = 'lo0'
 
 servidor = SocketRDT(_src_ip, _src_port, _dest_ip, _dest_port, _interface)
 
+start_time = time.time()
+
 while servidor.last_pkt_rcvd == None:
     pkt = servidor.listen()
 if servidor.conn_established:
-    for i in range(5):
+    while time.time() - start_time < 5:
         servidor.envio_paquetes_seguro('A')
-        servidor.listen()
+        pkt_capturado = servidor.listen()
+        if pkt_capturado == None:  # se pasó el timeout
+            servidor.proporciones['Demorado'] += 1
+            print('Paquete demorado')
+            servidor.reenviar_ultimo()
     servidor.terminar_conexion()
+servidor.mostrar_estadisticas()

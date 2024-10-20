@@ -1,6 +1,7 @@
 import canalruidoso as f  # Correr pip install canalruidoso en la terminal
 from scapy.all import *  # Correr pip install scapy en la terminal
 from funciones import *
+import time
 
 # Parametros
 _src_ip = '127.0.0.1'
@@ -11,12 +12,15 @@ _interface = 'lo0'
 
 cliente = SocketRDT(_src_ip, _src_port, _dest_ip, _dest_port, _interface)
 cliente.iniciar_conexion()
+
+start_time = time.time()
 while cliente.conn_established:
     pkt_capturado = cliente.listen()
-    if pkt_capturado == None:
+    if pkt_capturado == None:  # se pasó el timeout
         cliente.proporciones['Demorado'] += 1
         print('Paquete demorado')
-        continue # Sigue a la siguiente iteración del ciclo
+        cliente.reenviar_ultimo()
+        continue  # Sigue a la siguiente iteración del ciclo
     if not cliente.conn_established:
         break
     cliente.envio_paquetes_seguro('A')

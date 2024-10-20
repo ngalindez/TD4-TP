@@ -55,26 +55,24 @@ class SocketRDT:
             iface=self.interface,
             prn=self.info_packet,
             count=1,
-            timeout=30,
+            timeout=5,
             lfilter=self.filter_function)
         self.last_pkt_rcvd = pkt_capturado[0]
 
-        # Si no recibí nada, salgo de la función AJUSTAR
+        # Si no recibí nada, salgo de la función
         if not pkt_capturado:
             return
 
         if not self.verify_checksum(self.last_pkt_rcvd):
             self.proporciones['Corrupto'] += 1
             print('Paquete corrupto')
-            # self.reenviar_ultimo()
-            self.listen()
+            return
 
         # Para asegurarme de que recibí el que quiero
         # si self.last_pkt_sent == None, self.last_pkt_rcvd es el primero que recibo
         ACK_esperado = self.last_pkt_rcvd[TCP].ack if self.last_pkt_sent is None else self.last_pkt_sent[TCP].seq + 1
 
         if self.last_pkt_rcvd[TCP].ack != ACK_esperado:
-            # self.reenviar_ultimo()
             self.listen()
 
         self.proporciones['Normal'] += 1
