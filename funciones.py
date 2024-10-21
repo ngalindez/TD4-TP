@@ -39,6 +39,17 @@ class SocketRDT:
 
         return chksum0 == chksum1
 
+    def verify_packet(self, pkt, time_wait=False):
+        if self.last_pkt_rcvd[TCP].chksum == -1:  # Nos dice que está corrupto
+            return False  # sigue a la siguiente iteración
+
+        # se pasó el timeout (y no estoy en time_wait)
+        if pkt == None and not time_wait:
+            self.proporciones['Demorado'] += 1
+            print('Paquete demorado')
+            self.reenviar_ultimo()
+            return False  # Sigue a la siguiente iteración del ciclo
+
     def reenviar_ultimo(self):
         # Este paquete va a hacer de "último paquete recibido correctamente" para que el paquete que reenvio tenga #SEQ y #ACK correctos
         _last_pkt = IP()/TCP()
@@ -106,9 +117,9 @@ class SocketRDT:
         if self.last_pkt_rcvd[TCP].flags == 'F' and self.conn_established:
 
             # Mando un FA y espero a que me llegue un A
+            self.envio_paquetes_seguro(_flags='FA')
             while self.last_pkt_rcvd[TCP].flags != 'A':
 
-                self.envio_paquetes_seguro(_flags='FA')
                 pkt_capturado = self.listen()
 
                 # Nos dice que está corrupto
@@ -175,6 +186,18 @@ class SocketRDT:
                 self.reenviar_ultimo()
 
         self.envio_paquetes_seguro(_flags='A')
+
+        # Espera unos segundos más por si le piden retransmisión (TIME_WAIT)
+        print('TIME_WAIT\n')
+        time_wait = time.time()
+        while time.time() - time_wait < 30:
+            pkt_capturado = self.listen()
+            if not self.verify_packet(pkt_capturado, time_wait=True):
+                continue
+            # si recibí algo y tiene flags FA
+            if pkt_capturado and pkt_capturado[TCP].flags == 'FA':
+                self.reenviar_ultimo()
+
         self.conn_established = False
         print('Conexión cerrada\n')
 

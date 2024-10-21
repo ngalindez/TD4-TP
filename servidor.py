@@ -20,17 +20,12 @@ while not servidor.conn_established:
 start_time = time.time()
 servidor.envio_paquetes_seguro('A')
 
-while time.time() - start_time < 20 and servidor.last_pkt_rcvd != None:
-    print('--------------------------')
+while time.time() - start_time < 20:
+    print('--------------------------------')
     pkt_capturado = servidor.listen()
 
-    if servidor.last_pkt_rcvd[TCP].chksum == -1:  # Nos dice que está corrupto
-        continue  # sigue a la siguiente iteración
-
-    if pkt_capturado == None:  # se pasó el timeout
-        servidor.proporciones['Demorado'] += 1
-        print('Paquete demorado')
-        servidor.reenviar_ultimo()
+    if not servidor.verify_packet(pkt_capturado):
+        continue
 
     servidor.envio_paquetes_seguro('A')
 

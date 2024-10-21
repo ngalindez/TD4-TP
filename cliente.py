@@ -17,17 +17,11 @@ start_time = time.time()
 while cliente.conn_established:
     pkt_capturado = cliente.listen()
 
-    if cliente.last_pkt_rcvd[TCP].chksum == -1:  # Nos dice que está corrupto
-        continue  # sigue a la siguiente iteración
-
-    if pkt_capturado == None:  # se pasó el timeout
-        cliente.proporciones['Demorado'] += 1
-        print('Paquete demorado')
-        cliente.reenviar_ultimo()
-        continue  # Sigue a la siguiente iteración del ciclo
+    if not cliente.verify_packet(pkt_capturado):
+        continue
 
     if not cliente.conn_established:
         break
     cliente.envio_paquetes_seguro('A')
-    print('--------------------------')
+    print('--------------------------------')
 cliente.mostrar_estadisticas()
