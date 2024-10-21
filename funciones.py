@@ -40,15 +40,18 @@ class SocketRDT:
         return chksum0 == chksum1
 
     def verify_packet(self, pkt, time_wait=False):
-        if self.last_pkt_rcvd[TCP].chksum == -1:  # Nos dice que está corrupto
-            return False  # sigue a la siguiente iteración
 
         # se pasó el timeout (y no estoy en time_wait)
         if pkt == None and not time_wait:
             self.proporciones['Demorado'] += 1
             print('Paquete demorado')
             self.reenviar_ultimo()
-            return False  # Sigue a la siguiente iteración del ciclo
+            return False
+
+        if self.last_pkt_rcvd[TCP].chksum == -1:  # Nos dice que está corrupto
+            return False
+
+        return True
 
     def reenviar_ultimo(self):
         # Este paquete va a hacer de "último paquete recibido correctamente" para que el paquete que reenvio tenga #SEQ y #ACK correctos
@@ -78,8 +81,11 @@ class SocketRDT:
         if not self.verify_checksum(self.last_pkt_rcvd):
             self.proporciones['Corrupto'] += 1
             print('Paquete corrupto\n')
+            time.sleep(3)
+
             # Para indicar que está corrupto
             self.last_pkt_rcvd[TCP].chksum = -1
+
             return self.last_pkt_rcvd
 
         self.proporciones['Normal'] += 1
@@ -93,21 +99,15 @@ class SocketRDT:
             self.last_pkt_rcvd[TCP].ack = rand_SEQ
 
             # Mando un SA y espero que me llegue un A
+            self.envio_paquetes_seguro(_flags='SA')
             while self.last_pkt_rcvd[TCP].flags != 'A':
 
-                self.envio_paquetes_seguro(_flags='SA')
                 pkt_capturado = self.listen()
 
-                # Nos dice que está corrupto
-                if self.last_pkt_rcvd[TCP].chksum == -1:
-                    # Para no salir del ciclo
+                if not self.verify_packet(pkt_capturado):
+                    # para que no vuelva a entrar en el ciclo
                     self.last_pkt_rcvd[TCP].flags = None
-                    continue  # sigue a la siguiente iteración
-
-                if pkt_capturado == None:  # se pasó el timeout
-                    self.proporciones['Demorado'] += 1
-                    print('Paquete demorado\n')
-                    self.reenviar_ultimo()
+                    continue
 
             if self.last_pkt_rcvd[TCP].flags == 'A':
                 self.conn_established = True
@@ -122,16 +122,8 @@ class SocketRDT:
 
                 pkt_capturado = self.listen()
 
-                # Nos dice que está corrupto
-                if self.last_pkt_rcvd[TCP].chksum == -1:
-                    # Para no salir del ciclo
-                    self.last_pkt_rcvd[TCP].flags = None
-                    continue  # sigue a la siguiente iteración
-
-                if pkt_capturado == None:  # se pasó el timeout
-                    self.proporciones['Demorado'] += 1
-                    print('Paquete demorado\n')
-                    self.reenviar_ultimo()
+                if not self.verify_packet(pkt_capturado):
+                    continue
 
             if self.last_pkt_rcvd[TCP].flags == 'A':
                 self.conn_established = False
@@ -152,6 +144,7 @@ class SocketRDT:
 
         f.envio_paquetes_inseguro(packet)
         self.last_pkt_sent = packet
+        print('--------------------------------')
 
     def iniciar_conexion(self):
         # Elegimos #SEQ aleatorio para el primer paquete
@@ -179,11 +172,11 @@ class SocketRDT:
         print('Cerrando conexión...\n')
         self.envio_paquetes_seguro(_flags='F')
         while self.last_pkt_rcvd[TCP].flags != 'FA':
+
             pkt_capturado = self.listen()
-            if pkt_capturado == None:  # se pasó el timeout
-                self.proporciones['Demorado'] += 1
-                print('Paquete demorado\n')
-                self.reenviar_ultimo()
+
+            if not self.verify_packet(pkt_capturado):
+                continue
 
         self.envio_paquetes_seguro(_flags='A')
 
@@ -194,6 +187,7 @@ class SocketRDT:
             pkt_capturado = self.listen()
             if not self.verify_packet(pkt_capturado, time_wait=True):
                 continue
+
             # si recibí algo y tiene flags FA
             if pkt_capturado and pkt_capturado[TCP].flags == 'FA':
                 self.reenviar_ultimo()

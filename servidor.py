@@ -21,7 +21,6 @@ start_time = time.time()
 servidor.envio_paquetes_seguro('A')
 
 while time.time() - start_time < 20:
-    print('--------------------------------')
     pkt_capturado = servidor.listen()
 
     if not servidor.verify_packet(pkt_capturado):
