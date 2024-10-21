@@ -28,6 +28,10 @@ while time.time() - start_time < 20:
 
     servidor.envio_paquetes_seguro('A')
 
-servidor.listen()  # Escucha un último paquete
+while True:
+    pkt_capturado = servidor.listen()  # Escucha un último paquete
+    if servidor.verify_packet(pkt_capturado):
+        break
 servidor.terminar_conexion()
+
 servidor.mostrar_estadisticas()

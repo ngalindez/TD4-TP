@@ -105,8 +105,9 @@ class SocketRDT:
                 pkt_capturado = self.listen()
 
                 if not self.verify_packet(pkt_capturado):
-                    # para que no vuelva a entrar en el ciclo
-                    self.last_pkt_rcvd[TCP].flags = None
+                    # para que vuelva a entrar en el ciclo
+                    if self.last_pkt_rcvd != None:
+                        self.last_pkt_rcvd[TCP].flags = None
                     continue
 
             if self.last_pkt_rcvd[TCP].flags == 'A':
@@ -155,10 +156,14 @@ class SocketRDT:
             _flags='S',
             last_pkt=IP()/TCP(seq=-1, ack=rand_SEQ))
 
-        while self.last_pkt_rcvd == None or (self.last_pkt_rcvd[TCP].flags != 'SA'):
+        while self.last_pkt_rcvd == None or self.last_pkt_rcvd[TCP].flags != 'SA':
+
             pkt_capturado = self.listen()
-            if not pkt_capturado:
-                self.reenviar_ultimo()
+
+            if not self.verify_packet(pkt_capturado):
+                # para que vuelva a entrar en el ciclo
+                self.last_pkt_rcvd[TCP].flags = None
+                continue
 
         self.envio_paquetes_seguro(_flags='A')
         self.conn_established = True

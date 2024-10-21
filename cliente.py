@@ -23,4 +23,5 @@ while cliente.conn_established:
     if not cliente.conn_established:
         break
     cliente.envio_paquetes_seguro('A')
+    
 cliente.mostrar_estadisticas()
