@@ -13,17 +13,27 @@ _interface = 'lo0'
 
 servidor = SocketRDT(_src_ip, _src_port, _dest_ip, _dest_port, _interface)
 
-start_time = time.time()
 
-while servidor.last_pkt_rcvd == None:
+while not servidor.conn_established:
     pkt = servidor.listen()
-if servidor.conn_established:
-    while time.time() - start_time < 5:
-        servidor.envio_paquetes_seguro('A')
-        pkt_capturado = servidor.listen()
-        if pkt_capturado == None:  # se pasó el timeout
-            servidor.proporciones['Demorado'] += 1
-            print('Paquete demorado')
-            servidor.reenviar_ultimo()
-    servidor.terminar_conexion()
+
+start_time = time.time()
+servidor.envio_paquetes_seguro('A')
+
+while time.time() - start_time < 20 and servidor.last_pkt_rcvd != None:
+    print('--------------------------')
+    pkt_capturado = servidor.listen()
+
+    if servidor.last_pkt_rcvd[TCP].chksum == -1:  # Nos dice que está corrupto
+        continue  # sigue a la siguiente iteración
+
+    if pkt_capturado == None:  # se pasó el timeout
+        servidor.proporciones['Demorado'] += 1
+        print('Paquete demorado')
+        servidor.reenviar_ultimo()
+
+    servidor.envio_paquetes_seguro('A')
+
+servidor.listen()  # Escucha un último paquete
+servidor.terminar_conexion()
 servidor.mostrar_estadisticas()

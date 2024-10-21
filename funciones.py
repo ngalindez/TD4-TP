@@ -35,7 +35,7 @@ class SocketRDT:
         packet[TCP].chksum = None  # borro el valor viejo del paquete
         packet = packet.__class__(bytes(packet))  # recalculo el checksum
         chksum1 = packet[TCP].chksum
-        print(f"#Checksum calculado: {packet[TCP].chksum}")
+        print(f"#Checksum calculado: {packet[TCP].chksum}\n")
 
         return chksum0 == chksum1
 
@@ -45,35 +45,31 @@ class SocketRDT:
         _last_pkt[TCP].ack = self.last_pkt_sent[TCP].seq
         _last_pkt[TCP].seq = self.last_pkt_sent[TCP].ack - 1
 
-        # Si me llegó un #ACK que no esperaba o el paquete está corrupto, reenvio el último paquete
+        print('Reenviando...\n')
         self.envio_paquetes_seguro(
             self.last_pkt_sent[TCP].flags, last_pkt=_last_pkt)
 
     def listen(self):
-        print(f"Listening for TCP packets on port {self.src_port}...")
+        print(f"Listening for TCP packets on port {self.src_port}...\n")
         pkt_capturado = sniff(
             iface=self.interface,
             prn=self.info_packet,
             count=1,
-            timeout=5,
+            timeout=3,
             lfilter=self.filter_function)
-        self.last_pkt_rcvd = pkt_capturado[0]
 
         # Si no recibí nada, salgo de la función
         if not pkt_capturado:
             return
 
+        self.last_pkt_rcvd = pkt_capturado[0]
+
         if not self.verify_checksum(self.last_pkt_rcvd):
             self.proporciones['Corrupto'] += 1
-            print('Paquete corrupto')
-            return
-
-        # Para asegurarme de que recibí el que quiero
-        # si self.last_pkt_sent == None, self.last_pkt_rcvd es el primero que recibo
-        ACK_esperado = self.last_pkt_rcvd[TCP].ack if self.last_pkt_sent is None else self.last_pkt_sent[TCP].seq + 1
-
-        if self.last_pkt_rcvd[TCP].ack != ACK_esperado:
-            self.listen()
+            print('Paquete corrupto\n')
+            # Para indicar que está corrupto
+            self.last_pkt_rcvd[TCP].chksum = -1
+            return self.last_pkt_rcvd
 
         self.proporciones['Normal'] += 1
 
@@ -87,22 +83,48 @@ class SocketRDT:
 
             # Mando un SA y espero que me llegue un A
             while self.last_pkt_rcvd[TCP].flags != 'A':
-                self.envio_paquetes_seguro(_flags='SA', )
-                self.listen()
+
+                self.envio_paquetes_seguro(_flags='SA')
+                pkt_capturado = self.listen()
+
+                # Nos dice que está corrupto
+                if self.last_pkt_rcvd[TCP].chksum == -1:
+                    # Para no salir del ciclo
+                    self.last_pkt_rcvd[TCP].flags = None
+                    continue  # sigue a la siguiente iteración
+
+                if pkt_capturado == None:  # se pasó el timeout
+                    self.proporciones['Demorado'] += 1
+                    print('Paquete demorado\n')
+                    self.reenviar_ultimo()
 
             if self.last_pkt_rcvd[TCP].flags == 'A':
                 self.conn_established = True
+                print('Conexión establecida')
 
         # Para el cierre de conexión
         if self.last_pkt_rcvd[TCP].flags == 'F' and self.conn_established:
+
             # Mando un FA y espero a que me llegue un A
             while self.last_pkt_rcvd[TCP].flags != 'A':
+
                 self.envio_paquetes_seguro(_flags='FA')
-                self.listen()
+                pkt_capturado = self.listen()
+
+                # Nos dice que está corrupto
+                if self.last_pkt_rcvd[TCP].chksum == -1:
+                    # Para no salir del ciclo
+                    self.last_pkt_rcvd[TCP].flags = None
+                    continue  # sigue a la siguiente iteración
+
+                if pkt_capturado == None:  # se pasó el timeout
+                    self.proporciones['Demorado'] += 1
+                    print('Paquete demorado\n')
+                    self.reenviar_ultimo()
 
             if self.last_pkt_rcvd[TCP].flags == 'A':
                 self.conn_established = False
-                print('Connection closed')
+                print('Conexión cerrada\n')
 
         return pkt_capturado[0]
 
@@ -123,34 +145,49 @@ class SocketRDT:
     def iniciar_conexion(self):
         # Elegimos #SEQ aleatorio para el primer paquete
         rand_SEQ = random.randint(0, 1024)
+
+        print('Estableciendo conexión...\n')
         self.envio_paquetes_seguro(
             _flags='S',
             last_pkt=IP()/TCP(seq=-1, ack=rand_SEQ))
 
         while self.last_pkt_rcvd == None or (self.last_pkt_rcvd[TCP].flags != 'SA'):
-            self.listen()
+            pkt_capturado = self.listen()
+            if not pkt_capturado:
+                self.reenviar_ultimo()
 
         self.envio_paquetes_seguro(_flags='A')
         self.conn_established = True
+        print('Conexión establecida\n')
+        return
 
     def terminar_conexion(self):
         if not self.conn_established:
             return
 
+        print('Cerrando conexión...\n')
         self.envio_paquetes_seguro(_flags='F')
         while self.last_pkt_rcvd[TCP].flags != 'FA':
-            self.listen()
+            pkt_capturado = self.listen()
+            if pkt_capturado == None:  # se pasó el timeout
+                self.proporciones['Demorado'] += 1
+                print('Paquete demorado\n')
+                self.reenviar_ultimo()
 
         self.envio_paquetes_seguro(_flags='A')
         self.conn_established = False
-        print('Connection closed')
+        print('Conexión cerrada\n')
 
     def mostrar_estadisticas(self):
         total = self.proporciones['Normal'] + self.proporciones['Corrupto'] + \
             self.proporciones['Demorado'] + self.proporciones['Perdido']
 
         print(f"\nTotal enviados: {total}")
-        print(f"Normal: {100 * self.proporciones['Normal'] / total}%")
-        print(f"Corrupto: {100 * self.proporciones['Corrupto'] / total}%")
-        print(f"Demorado: {100 * self.proporciones['Demorado'] / total}%")
-        print(f"Perdido: {100 * self.proporciones['Perdido'] / total}%")
+        print(
+            f"Normal: {round(100 * self.proporciones['Normal'] / total, 2)}%")
+        print(
+            f"Corrupto: {round(100 * self.proporciones['Corrupto'] / total, 2)}%")
+        print(
+            f"Demorado: {round(100 * self.proporciones['Demorado'] / total, 2)}%")
+        print(
+            f"Perdido: {round(100 * self.proporciones['Perdido'] / total), 2}%")
