@@ -4,6 +4,8 @@ import canalruidoso as f
 import time
 
 
+# IMPLEMENTAR QUE IGNORE UN PAQUETE SI YA LO RECIBIÓ 
+
 class SocketRDT:
 
     def __init__(self, src_ip, src_port, dest_ip, dest_port, interface):
@@ -81,7 +83,6 @@ class SocketRDT:
         if not self.verify_checksum(self.last_pkt_rcvd):
             self.proporciones['Corrupto'] += 1
             print('Paquete corrupto\n')
-            time.sleep(3)
 
             # Para indicar que está corrupto
             self.last_pkt_rcvd[TCP].chksum = -1
