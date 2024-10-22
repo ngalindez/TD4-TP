@@ -4,7 +4,7 @@ import canalruidoso as f
 import time
 
 
-# IMPLEMENTAR QUE IGNORE UN PAQUETE SI YA LO RECIBIÓ 
+# IMPLEMENTAR QUE IGNORE UN PAQUETE SI YA LO RECIBIÓ
 
 class SocketRDT:
 
@@ -17,8 +17,8 @@ class SocketRDT:
         self.last_pkt_rcvd = None
         self.last_pkt_sent = None
         self.conn_established = False
-        self.proporciones = {'Perdido': 0,
-                             'Demorado': 0, 'Corrupto': 0, 'Normal': 0}
+        self.proporciones = {'Enviados': 0,
+                             'Recibidos': 0, 'Demorados': 0, 'Corruptos': 0}
 
     def info_packet(self, packet):
         print(f"\nSource port: {packet[TCP].sport}")
@@ -45,8 +45,10 @@ class SocketRDT:
 
         # se pasó el timeout (y no estoy en time_wait)
         if pkt == None and not time_wait:
-            self.proporciones['Demorado'] += 1
-            print('Paquete demorado')
+
+            self.proporciones['Demorados'] += 1
+            print('Paquete demorado\n')
+
             self.reenviar_ultimo()
             return False
 
@@ -78,18 +80,18 @@ class SocketRDT:
         if not pkt_capturado:
             return
 
+        self.proporciones['Recibidos'] += 1
         self.last_pkt_rcvd = pkt_capturado[0]
 
         if not self.verify_checksum(self.last_pkt_rcvd):
-            self.proporciones['Corrupto'] += 1
+            self.proporciones['Corruptos'] += 1
             print('Paquete corrupto\n')
 
             # Para indicar que está corrupto
             self.last_pkt_rcvd[TCP].chksum = -1
 
+            time.sleep(3)
             return self.last_pkt_rcvd
-
-        self.proporciones['Normal'] += 1
 
         # Para el three-way-handshake
         if self.last_pkt_rcvd[TCP].flags == 'S' and not self.conn_established:
@@ -113,7 +115,7 @@ class SocketRDT:
 
             if self.last_pkt_rcvd[TCP].flags == 'A':
                 self.conn_established = True
-                print('Conexión establecida')
+                print('Conexión establecida\n')
 
         # Para el cierre de conexión
         if self.last_pkt_rcvd[TCP].flags == 'F' and self.conn_established:
@@ -125,6 +127,8 @@ class SocketRDT:
                 pkt_capturado = self.listen()
 
                 if not self.verify_packet(pkt_capturado):
+                    if self.last_pkt_rcvd != None:
+                        self.last_pkt_rcvd[TCP].flags = None
                     continue
 
             if self.last_pkt_rcvd[TCP].flags == 'A':
@@ -144,6 +148,7 @@ class SocketRDT:
                   ack=last_pkt[TCP].seq + 1)
         packet = ip/tcp
 
+        self.proporciones['Enviados'] += 1
         f.envio_paquetes_inseguro(packet)
         self.last_pkt_sent = packet
         print('--------------------------------')
@@ -163,7 +168,8 @@ class SocketRDT:
 
             if not self.verify_packet(pkt_capturado):
                 # para que vuelva a entrar en el ciclo
-                self.last_pkt_rcvd[TCP].flags = None
+                if self.last_pkt_rcvd != None:
+                    self.last_pkt_rcvd[TCP].flags = None
                 continue
 
         self.envio_paquetes_seguro(_flags='A')
@@ -202,15 +208,15 @@ class SocketRDT:
         print('Conexión cerrada\n')
 
     def mostrar_estadisticas(self):
-        total = self.proporciones['Normal'] + self.proporciones['Corrupto'] + \
-            self.proporciones['Demorado'] + self.proporciones['Perdido']
 
-        print(f"\nTotal enviados: {total}")
-        print(
-            f"Normal: {round(100 * self.proporciones['Normal'] / total, 2)}%")
-        print(
-            f"Corrupto: {round(100 * self.proporciones['Corrupto'] / total, 2)}%")
-        print(
-            f"Demorado: {round(100 * self.proporciones['Demorado'] / total, 2)}%")
-        print(
-            f"Perdido: {round(100 * self.proporciones['Perdido'] / total), 2}%")
+        total_enviados = self.proporciones['Enviados']
+        total_recibidos = self.proporciones['Recibidos']
+        recibidos_corruptos = self.proporciones['Corruptos']
+        recibidos_demorados = self.proporciones['Demorados']
+
+        print(f"\nTotal enviados: {total_enviados}")
+        print(f"Total recibidos: {total_recibidos}")
+        print(f"Total Demorados: {recibidos_demorados}")
+        print(f"Total Corruptos: {recibidos_corruptos}")
+        # print(f"Demorados: {round(100 * (recibidos_demorados / total_recibidos), 2)}%")
+        # print(f"Corruptos: {round(100 * (recibidos_corruptos / total_recibidos), 2)}%")
