@@ -18,20 +18,20 @@ while not servidor.conn_established:
     pkt = servidor.listen()
 
 start_time = time.time()
-servidor.envio_paquetes_seguro('A')
+#servidor.envio_paquetes_seguro('A')
 
 while time.time() - start_time < 20:
     pkt_capturado = servidor.listen()
 
-    if not servidor.verify_packet(pkt_capturado):
-        continue
+    # if not servidor.verify_packet(pkt_capturado):
+    #     continue
 
-    servidor.envio_paquetes_seguro('A')
+    # servidor.envio_paquetes_seguro('A')
 
-while True:
-    pkt_capturado = servidor.listen()  # Escucha un último paquete
-    if servidor.verify_packet(pkt_capturado):
-        break
+# while True:
+#     pkt_capturado = servidor.listen()  # Escucha un último paquete
+#     if servidor.verify_packet(pkt_capturado):
+#         break
 servidor.terminar_conexion()
 
 servidor.mostrar_estadisticas()

@@ -1,1 +1,1 @@
-print
+time_wait

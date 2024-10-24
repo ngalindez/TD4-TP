@@ -13,14 +13,16 @@ _interface = 'lo0'
 cliente = SocketRDT(_src_ip, _src_port, _dest_ip, _dest_port, _interface)
 cliente.iniciar_conexion()
 
+start_time = time.time()
 while cliente.conn_established:
-    pkt_capturado = cliente.listen()
+    # pkt_capturado = cliente.listen()
 
-    if not cliente.verify_packet(pkt_capturado):
-        continue
+    #     if not cliente.verify_packet(pkt_capturado):
+    #         continue
 
-    if not cliente.conn_established:
-        break
+    #     if not cliente.conn_established:
+    #         break
     cliente.envio_paquetes_seguro('A')
-
+    if time.time() - start_time > 20:
+        cliente.listen()
 cliente.mostrar_estadisticas()

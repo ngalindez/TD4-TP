@@ -17,6 +17,7 @@ class SocketRDT:
         self.last_pkt_rcvd = None
         self.last_pkt_sent = None
         self.conn_established = False
+        self.time_wait = False
         self.proporciones = {'Enviados': 0,
                              'Recibidos': 0, 'Demorados': 0, 'Corruptos': 0}
 
@@ -41,13 +42,13 @@ class SocketRDT:
 
         return chksum0 == chksum1
 
-    def verify_packet(self, pkt, time_wait=False):
+    def verify_packet(self, pkt):
 
         # se pasó el timeout (y no estoy en time_wait)
-        if pkt == None and not time_wait:
+        if pkt == None and not self.time_wait:
 
-            self.proporciones['Demorados'] += 1
-            print('Paquete demorado\n')
+            # self.proporciones['Demorados'] += 1
+            # print('Paquete demorado\n')
 
             self.reenviar_ultimo()
             return False
@@ -78,6 +79,9 @@ class SocketRDT:
 
         # Si no recibí nada, salgo de la función
         if not pkt_capturado:
+            if not self.time_wait:
+                self.proporciones['Demorados'] += 1
+                print('Paquete demorado\n')
             return
 
         self.proporciones['Recibidos'] += 1
@@ -195,9 +199,10 @@ class SocketRDT:
         # Espera unos segundos más por si le piden retransmisión (TIME_WAIT)
         print('TIME_WAIT\n')
         time_wait = time.time()
-        while time.time() - time_wait < 30:
+        while time.time() - time_wait < 10:
             pkt_capturado = self.listen()
-            if not self.verify_packet(pkt_capturado, time_wait=True):
+            self.time_wait = True
+            if not self.verify_packet(pkt_capturado):
                 continue
 
             # si recibí algo y tiene flags FA
