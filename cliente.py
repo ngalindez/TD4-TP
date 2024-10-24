@@ -1,10 +1,10 @@
 from funciones import *
 
 # Elegimos parametros
-source_ip = '192.168.56.1'
-dest_ip = '192.168.56.1'
-dest_port = 8000
-src_port = 5000
+source_ip = '127.0.0.1'
+dest_ip = '127.0.0.1'
+dest_port = 9000
+src_port = 6000
 seq_ = 500
 ack_ = None
 tcp_pkt = None

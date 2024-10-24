@@ -45,5 +45,9 @@ def escuchar(timeout_, puerto_):
     filter_str = f"tcp port {puerto_}"
 
     pkt_capturado = sniff(
-        iface=interface, prn=info_packet, count=1, timeout=timeout_, lfilter=filter_function_cliente if puerto_ == 5000 else filter_function_server)
+        iface=interface,
+        prn=info_packet,
+        count=1,
+        timeout=timeout_,
+        lfilter=filter_function_cliente if puerto_ == 6000 else filter_function_server)
     return pkt_capturado
