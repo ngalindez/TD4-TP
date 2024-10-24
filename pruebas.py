@@ -19,7 +19,7 @@ tiempo_send = {}  # mapea #SEQ <--> tiempo de send
 ip_ = '127.0.0.1'
 client_port = 6000
 server_port = 9000
-rand_seq = 0
+init_seq = 0
 
 # Packet sending thread
 
@@ -28,16 +28,16 @@ def enviar_paquetes():
     global pkts_enviados, tiempo_send
     for i in range(10):
         ip = IP(dst=ip_, src=ip_)
-        tcp = TCP(dport=client_port, sport=server_port, seq=rand_seq + i)
-    pkt = ip/tcp
+        tcp = TCP(dport=client_port, sport=server_port, seq=init_seq + i)
+        pkt = ip/tcp
 
-    send_time = time.time()
-    tiempo_send[pkt[TCP].seq] = send_time
-    pkts_enviados += 1
-    f.envio_paquetes_inseguro(pkt)
+        send_time = time.time()
+        tiempo_send[pkt[TCP].seq] = send_time
+        pkts_enviados += 1
+        f.envio_paquetes_inseguro(pkt)
 
-    print(f"Packet {rand_seq + i} sent.")
-    time.sleep(1)  # Sleep 1 second between sends
+        print(f"Packet {init_seq + i} sent at {tiempo_send[pkt[TCP].seq]}")
+        time.sleep(1)  # Sleep 1 second between sends
 
 # Packet receiving thread
 
@@ -60,11 +60,10 @@ def receive_packets():
 
         print(f"Packet #{pkt[TCP].seq} received at {receive_time}")
 
-    sniff(
-        iface='lo0',
-        filter_str="tcp port 9000",
-        prn=listen,
-        timeout=60)
+    pkt = sniff(iface='lo0',
+                filter="tcp port 9000",
+                prn=listen,
+                timeout=30)
 
 
 print('Arrancando...')
@@ -83,7 +82,7 @@ receive_thread.join()
 
 pkts_perdidos = pkts_enviados - pkts_recibidos
 
-print(f"Paquetes recibidos: {pkts_recibidos}")
+print(f"\nPaquetes recibidos: {pkts_recibidos}")
 print(f"Paquetes demorados: {pkts_demorados}")
 print(f"Paquetes corruptos: {pkts_corruptos}")
 print(f"Paquetes perdidos: {pkts_perdidos}")
