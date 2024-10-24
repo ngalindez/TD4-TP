@@ -4,8 +4,6 @@ import canalruidoso as f
 import time
 
 
-# IMPLEMENTAR QUE IGNORE UN PAQUETE SI YA LO RECIBIÓ
-
 class SocketRDT:
 
     def __init__(self, src_ip, src_port, dest_ip, dest_port, interface):
@@ -94,7 +92,7 @@ class SocketRDT:
             # Para indicar que está corrupto
             self.last_pkt_rcvd[TCP].chksum = -1
 
-            time.sleep(3)
+            # time.sleep(3)
             return self.last_pkt_rcvd
 
         # Para el three-way-handshake
@@ -152,8 +150,8 @@ class SocketRDT:
                   ack=last_pkt[TCP].seq + 1)
         packet = ip/tcp
 
-        self.proporciones['Enviados'] += 1
         f.envio_paquetes_inseguro(packet)
+        self.proporciones['Enviados'] += 1
         self.last_pkt_sent = packet
         print('--------------------------------')
 
@@ -199,9 +197,9 @@ class SocketRDT:
         # Espera unos segundos más por si le piden retransmisión (TIME_WAIT)
         print('TIME_WAIT\n')
         time_wait = time.time()
+        self.time_wait = True
         while time.time() - time_wait < 10:
             pkt_capturado = self.listen()
-            self.time_wait = True
             if not self.verify_packet(pkt_capturado):
                 continue
 

@@ -23,6 +23,7 @@ while cliente.conn_established:
     #     if not cliente.conn_established:
     #         break
     cliente.envio_paquetes_seguro('A')
+    cliente.last_pkt_rcvd[TCP].ack += 1
     if time.time() - start_time > 20:
         cliente.listen()
 cliente.mostrar_estadisticas()
