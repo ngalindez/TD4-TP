@@ -10,8 +10,9 @@ def info_packet(packet):
     print(f"#ACK: {packet[0][TCP].ack}")
     print(f"#Checksum: {packet[0][TCP].chksum}")
 
+
 def verify_checksum(packet):
-        # extraigo el checksum del paquete que me llegó
+    # extraigo el checksum del paquete que me llegó
     chksum0 = packet[TCP].chksum
     packet[TCP].chksum = None  # borro el valor viejo del paquete
     packet = packet.__class__(bytes(packet))  # recalculo el checksum
@@ -22,17 +23,27 @@ def verify_checksum(packet):
 
 def enviar_pkt(seq_a, ack_a, flags_, dest_ip, source_ip, dest_port, src_port):
     ip = IP(dst=dest_ip, src=source_ip)
-    tcp = TCP(dport=dest_port, sport=src_port, flags=flags_, seq=seq_a, ack=ack_a)
+    tcp = TCP(dport=dest_port, sport=src_port,
+              flags=flags_, seq=seq_a, ack=ack_a)
     packet = ip/tcp
     info_packet(packet)
     return packet
 
+
+def filter_function_cliente(packet):
+    return packet.haslayer(TCP) and packet[TCP].dport == 5000
+
+
+def filter_function_server(packet):
+    return packet.haslayer(TCP) and packet[TCP].dport == 8000
+
+
 def escuchar(timeout_, puerto_):
-    interface = "Software Loopback Interface 1"
+    interface = "lo0"
 
     print(f"Listening for TCP packets on port {puerto_}...")
     filter_str = f"tcp port {puerto_}"
 
     pkt_capturado = sniff(
-        iface=interface, prn=info_packet, count=1, timeout=timeout_, filter=filter_str,)
+        iface=interface, prn=info_packet, count=1, timeout=timeout_, lfilter=filter_function_cliente if puerto_ == 5000 else filter_function_server)
     return pkt_capturado

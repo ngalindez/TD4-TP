@@ -16,29 +16,32 @@ while i < 1:
     tcp_pkt = None
     while not tcp_pkt or (TCP in tcp_pkt[0] and (tcp_pkt[0][TCP].ack < seq_ + 1 or not verify_checksum(tcp_pkt[0]))):
         tcp_pkt = None
-        f.envio_paquetes_inseguro(enviar_pkt(seq_, 0, "S", dest_ip, source_ip, dest_port, src_port))
+        f.envio_paquetes_inseguro(enviar_pkt(
+            seq_, 0, "S", dest_ip, source_ip, dest_port, src_port))
         tcp_pkt = escuchar(3, src_port)
 
     rcv = tcp_pkt[0][TCP]
     ack_ = rcv.seq
     seq_ = rcv.ack
-    f.envio_paquetes_inseguro(enviar_pkt(seq_, ack_ + 1, "A", dest_ip, source_ip, dest_port, src_port))
+    f.envio_paquetes_inseguro(enviar_pkt(
+        seq_, ack_ + 1, "A", dest_ip, source_ip, dest_port, src_port))
     tcp_pkt = None
 
     while True:
         tcp_pkt = escuchar(3, src_port)
 
         if tcp_pkt and TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack < seq_ + 1:
-            f.envio_paquetes_inseguro(enviar_pkt(seq_, ack_ + 1, "A", dest_ip, source_ip, dest_port, src_port))
+            f.envio_paquetes_inseguro(enviar_pkt(
+                seq_, ack_ + 1, "A", dest_ip, source_ip, dest_port, src_port))
             tcp_pkt = None
         elif tcp_pkt and TCP in tcp_pkt[0] and not verify_checksum(tcp_pkt[0]):
-            f.envio_paquetes_inseguro(enviar_pkt(seq_, ack_ + 1, "A", dest_ip, source_ip, dest_port, src_port))
+            f.envio_paquetes_inseguro(enviar_pkt(
+                seq_, ack_ + 1, "A", dest_ip, source_ip, dest_port, src_port))
             tcp_pkt = None
 
         elif tcp_pkt and TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack >= seq_ + 1:
-            
-            break
 
+            break
 
     print("sali del loop")
 
@@ -51,15 +54,17 @@ while i < 1:
     start_time = time.time()
 
     while time.time() - start_time < timer_:
-        
+
         if not tcp_pkt or (TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack < seq_ + 1):
             print("entre aca")
-            f.envio_paquetes_inseguro(enviar_pkt(seq_, ack_ + 1, "FA", dest_ip, source_ip, dest_port, src_port))
+            f.envio_paquetes_inseguro(enviar_pkt(
+                seq_, ack_ + 1, "FA", dest_ip, source_ip, dest_port, src_port))
             tcp_pkt = None
 
         elif TCP in tcp_pkt[0] and not verify_checksum(tcp_pkt[0]):
             print("entre aca 2")
-            f.envio_paquetes_inseguro(enviar_pkt(seq_, ack_ + 1, "FA", dest_ip, source_ip, dest_port, src_port))
+            f.envio_paquetes_inseguro(enviar_pkt(
+                seq_, ack_ + 1, "FA", dest_ip, source_ip, dest_port, src_port))
             tcp_pkt = None
 
         elif tcp_pkt and TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack >= seq_ + 1:
@@ -69,6 +74,3 @@ while i < 1:
         tcp_pkt = escuchar(3, src_port)
 
     i += 1
-
-
-
