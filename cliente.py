@@ -40,8 +40,10 @@ while i < 1:
     print('Conexión establecida\n')
 
     while True:
+        # Escucho esperando recibir el mensaje de F.
         tcp_pkt = escuchar(3, src_port)
 
+        # Si me llega un paquete viejo (que ya recibi), vuelvo a mandar el mensaje anterior de A del SA del servidor.
         if tcp_pkt and TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack < seq_ + 1:
 
             packet = build_pkt(seq_, ack_ + 1, "A", dest_ip,
@@ -50,6 +52,7 @@ while i < 1:
             tcp_pkt = None
             print('------------------------------')
 
+        # Si me llega un paquete con numero de ACK correcto pero con checksum mal, reenvio el A del SA del servidor.
         elif tcp_pkt and TCP in tcp_pkt[0] and not verify_checksum(tcp_pkt[0]):
 
             packet = build_pkt(seq_, ack_ + 1, "A", dest_ip,
@@ -58,6 +61,7 @@ while i < 1:
             tcp_pkt = None
             print('------------------------------')
 
+        # Si me llega un paquete con ACK correcto y con checksum bien, salgo del ciclo.
         elif tcp_pkt and TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack >= seq_ + 1:
             break
 
@@ -67,11 +71,14 @@ while i < 1:
     seq_ = rcv.ack
     tcp_pkt = None
 
+    # Empiezo un timer por si no me llega el ACK del FIN, al momento que termina se cierra la conexion forzosamente.
     timer_ = 60
     start_time = time.time()
+    
 
     while time.time() - start_time < timer_:
 
+        # Mando el FA si es la primera iteracion o en el caso de ya haberlo mandado, si epserando el ACK, no me llega un ningun paquete o con ACK menor.
         if not tcp_pkt or (TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack < seq_ + 1):
 
             packet = build_pkt(seq_, ack_ + 1, "FA", dest_ip,
@@ -80,6 +87,7 @@ while i < 1:
             tcp_pkt = None
             print('------------------------------')
 
+        # Mando el FA si me llego un paquete con ACK correcto pero con checksum mal.
         elif TCP in tcp_pkt[0] and not verify_checksum(tcp_pkt[0]):
 
             packet = build_pkt(seq_, ack_ + 1, "FA", dest_ip,
@@ -88,10 +96,14 @@ while i < 1:
             tcp_pkt = None
             print('------------------------------')
 
+        # Salgo del ciclo si me llega el ACK correcto con checksum correcto.
         elif tcp_pkt and TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack >= seq_ + 1:
             break
-
+        
+        # escucho para esperar el ACK del FA.
         tcp_pkt = escuchar(3, src_port)
-        print('Conexión cerrada')
+        
+    # Llego aca si me llego el ACK correcto con checksum correcto o se termino el timer de 60 seg y cierro la conexion de manera forzosa ya que nunca me llego el ACK.
+    print('Conexión cerrada')
 
     i += 1
