@@ -1,6 +1,7 @@
 import canalruidoso as f  # Correr pip install canalruidoso en la terminal
 import threading
 import time
+import csv
 from funciones import verify_checksum, filter_function_server
 from scapy.all import send, sniff, IP, TCP
 
@@ -8,15 +9,20 @@ from scapy.all import send, sniff, IP, TCP
 
 # Quiero ver tmb el tiempo que tarda en enviarse el paquete
 # Podemos poner en un csv, para cada #seq, tiempo_viaje, corrupto(1/0), demorado(1/0), perdido(1/0)
-# cada vez que manda, agrega una columna con tiempo_send, #seq, y el resto en N/A; y cuando llega completa con corrupto, demorado, o perdido si no llego
+# cada vez que manda, agrega una columna con time_sent, #seq, y el resto en N/A; y cuando llega completa con corrupto, demorado, o perdido si no llego
 
 
 pkts_enviados = 0
 pkts_recibidos = 0
 pkts_demorados = 0
 pkts_corruptos = 0
-tiempo_receive = {}  # mapea #SEQ <--> tiempo de recepción
-tiempo_send = {}  # mapea #SEQ <--> tiempo de send
+tiempos_rcvd = {}  # mapea #SEQ <--> tiempo de recepción
+tiempos_sent = {}  # mapea #SEQ <--> tiempo de send
+data = [['#SEQ', 'time_sent', 'time_received',
+         'total_time', 'corrupto', 'demorado', 'perdido']]
+time_inicio = 0
+
+cant_paquetes = 100
 
 
 ip_ = '127.0.0.1'
@@ -28,47 +34,58 @@ init_seq = 0
 
 
 def enviar_paquetes():
-    global pkts_enviados, tiempo_send
-    for i in range(10):
+    global pkts_enviados, tiempos_sent, data, time_inicio
+    time_inicio = time.time()
+    for i in range(cant_paquetes):
         ip = IP(dst=ip_, src=ip_)
         tcp = TCP(sport=client_port, dport=server_port,
                   seq=init_seq + i, ack=0)
         pkt = ip/tcp
 
-        send_time = time.time()
-        tiempo_send[pkt[TCP].seq] = send_time
+        time_sent = time.time()
+        tiempos_sent[pkt[TCP].seq] = time_sent
         pkts_enviados += 1
+        # perdido es 1, y si el server lo recibe, lo cambia a 0
+        data.append([pkt[TCP].seq, time_sent, 0, 0, 0, 0, 1])
 
         f.envio_paquetes_inseguro(pkt)
 
         print(
-            f"Packet #{init_seq + i + 1} sent at {tiempo_send[pkt[TCP].seq]}")
+            f"Paquete #{init_seq + i + 1} enviado en {round(time_sent - time_inicio, 4)}s")
 
 
 def receive_packets():
-    global pkts_recibidos, pkts_demorados, pkts_corruptos, tiempo_receive
+    global pkts_recibidos, pkts_demorados, pkts_corruptos, tiempos_rcvd, data, time_inicio
 
     def listen(pkt):
         global pkts_recibidos, pkts_demorados, pkts_corruptos
 
-        receive_time = time.time()
-        tiempo_receive[pkt[TCP].seq] = receive_time
+        time_received = time.time()
+        tiempos_rcvd[pkt[TCP].seq] = time_received
         pkts_recibidos += 1
 
+        data[-1][2] = time_received  # columna de 'time_received'
+        # total_time = time_received - time_sent
+        data[-1][3] = time_received - data[-1][1]
+        data[-1][6] = 0  # cambia la columna de perdido a 0
+
         # Chequeo si llegó tarde
-        if receive_time - tiempo_send[pkt[TCP].seq] > 3:
+        if time_received - tiempos_sent[pkt[TCP].seq] > 3:
             print('Paquete demorado')
             pkts_demorados += 1
+            data[-1][4] = 1
 
         if not verify_checksum(pkt):
             print('Paquete corrupto')
             pkts_corruptos += 1
+            data[-1][5] = 1
 
-        print(f"Packet #{pkt[TCP].seq} received at {receive_time}")
+        print(
+            f"Paquete #{pkt[TCP].seq} recibido en {round(time_received - time_inicio, 4)}s")
 
-    # print(f"Listening for TCP packets on port 9000 ...\n")
-    pkt = sniff(iface='lo0', prn=listen, timeout=20,
-                lfilter=filter_function_server)
+    sniff(iface='lo0', prn=listen, timeout=cant_paquetes *
+          2, lfilter=filter_function_server)
+    print('Terminó de escuchar')
 
 
 print('Arrancando...')
@@ -99,3 +116,11 @@ print(
     f"\tPaquetes demorados: {pkts_demorados} ({round(100 * pkts_demorados / pkts_recibidos, 2)}%)")
 print(
     f"\tPaquetes corruptos: {pkts_corruptos} ({round(100 * pkts_corruptos / pkts_recibidos, 2)}%)")
+
+
+with open("output.csv", mode="a", newline="") as file:
+    writer = csv.writer(file)
+
+    # Write rows sequentially
+    for row in data[1:]:
+        writer.writerow(row)

@@ -26,7 +26,7 @@ while i < 1:
     # de ACK no esperado, vuelvo a enviar el SA.
     while not tcp_pkt or (TCP in tcp_pkt[0] and (tcp_pkt[0][TCP].ack < seq_ + 1 or not verify_checksum(tcp_pkt[0]))):
         packet = build_pkt(seq_, ack_ + 1, "SA", dest_ip,
-                               source_ip, dest_port, src_port)
+                           source_ip, dest_port, src_port)
         f.envio_paquetes_inseguro(packet)
         print('------------------------------')
         tcp_pkt = escuchar(3, src_port)
@@ -55,7 +55,7 @@ while i < 1:
         print('------------------------------')
         tcp_pkt = escuchar(3, src_port)
 
-    # Pongo un timer de 20 seg para que escuche por si el el cliente requiere que le vuelva enviar el ACK de su fin, 
+    # Pongo un timer de 20 seg para que escuche por si el el cliente requiere que le vuelva enviar el ACK de su fin,
     # cuando se termine este, se termina la conexion.
     timer_ = 20
     start_time = time.time()
@@ -75,7 +75,7 @@ while i < 1:
     # El servidor escucha hasta que pasen los 20 segundos.
     while time.time() - start_time < timer_:
 
-        # Si en esos 20 segundo le me vuelve a llegar un paquete y es el de FA del cliente (con Checksum correcto), 
+        # Si en esos 20 segundo le me vuelve a llegar un paquete y es el de FA del cliente (con Checksum correcto),
         # le vuelvo a enviar el A.
         if tcp_pkt and TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack >= seq_ and verify_checksum(tcp_pkt[0]):
 
@@ -90,4 +90,3 @@ while i < 1:
     # Se cierra la conexion al terminar los 20 seg.
     print('Conexión cerrada')
     i += 1
-
