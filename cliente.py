@@ -78,7 +78,8 @@ while i < 1:
 
     while time.time() - start_time < timer_:
 
-        # Mando el FA si es la primera iteracion o en el caso de ya haberlo mandado, si epserando el ACK, no me llega un ningun paquete o con ACK menor.
+        # Mando el FA si es la primera iteracion o en el caso de ya haberlo mandado, si epserando el ACK, 
+        # no me llega un ningun paquete o con ACK menor.
         if not tcp_pkt or (TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack < seq_ + 1):
 
             packet = build_pkt(seq_, ack_ + 1, "FA", dest_ip,
@@ -103,7 +104,8 @@ while i < 1:
         # escucho para esperar el ACK del FA.
         tcp_pkt = escuchar(3, src_port)
         
-    # Llego aca si me llego el ACK correcto con checksum correcto o se termino el timer de 60 seg y cierro la conexion de manera forzosa ya que nunca me llego el ACK.
+    # Llego aca si me llego el ACK correcto con checksum correcto o se termino el timer de 60 seg 
+    # y cierro la conexion de manera forzosa ya que nunca me llego el ACK.
     print('Conexión cerrada')
 
     i += 1
