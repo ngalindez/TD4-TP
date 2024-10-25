@@ -25,7 +25,7 @@ init_seq = 0
 
 def enviar_paquetes():
     global pkts_enviados, tiempo_send
-    for i in range(50):
+    for i in range(10):
         ip = IP(dst=ip_, src=ip_)
         tcp = TCP(sport=client_port, dport=server_port,
                   seq=init_seq + i, ack=0)
@@ -63,7 +63,7 @@ def receive_packets():
         print(f"Packet #{pkt[TCP].seq} received at {receive_time}")
 
     # print(f"Listening for TCP packets on port 9000 ...\n")
-    pkt = sniff(iface='lo0', prn=listen, timeout=80,
+    pkt = sniff(iface='lo0', prn=listen, timeout=20,
                 lfilter=filter_function_server)
 
 
@@ -82,12 +82,16 @@ receive_thread.join()
 # Muestro stats
 print('------------------------------')
 pkts_perdidos = pkts_enviados - pkts_recibidos
+pkts_correctos = pkts_recibidos - pkts_corruptos - pkts_demorados
 
 print(f"\nPaquetes enviados: {pkts_enviados}")
-print(f"Paquetes recibidos: {pkts_recibidos}")
 print(
-    f"Paquetes demorados: {pkts_demorados} ({round(100 * pkts_demorados / pkts_recibidos, 2)}%)")
+    f"\tPaquetes perdidos: {pkts_perdidos} ({round(100 * pkts_perdidos / pkts_enviados, 2)}%)")
+
+print(f"\nPaquetes recibidos: {pkts_recibidos}")
 print(
-    f"Paquetes corruptos: {pkts_corruptos} ({round(100 * pkts_corruptos / pkts_recibidos, 2)}%)")
+    f"\tPaquetes recibidos correctamente: {pkts_correctos} ({round(100 * pkts_correctos / pkts_recibidos, 2)}%)")
 print(
-    f"Paquetes perdidos: {pkts_perdidos} ({round(100 * pkts_perdidos / pkts_recibidos, 2)}%)")
+    f"\tPaquetes demorados: {pkts_demorados} ({round(100 * pkts_demorados / pkts_recibidos, 2)}%)")
+print(
+    f"\tPaquetes corruptos: {pkts_corruptos} ({round(100 * pkts_corruptos / pkts_recibidos, 2)}%)")
