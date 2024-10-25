@@ -31,6 +31,7 @@ while i < 1:
     seq_ = rcv.ack
     tcp_pkt = None
 
+    # Armo y mando el A del mensaje de SA del servidor.
     packet = build_pkt(seq_, ack_ + 1, "A", dest_ip,
                        source_ip, dest_port, src_port)
     f.envio_paquetes_inseguro(packet)
