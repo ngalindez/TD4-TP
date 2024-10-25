@@ -1,14 +1,15 @@
 import canalruidoso as f  # Correr pip install canalruidoso en la terminal
-import time
 import threading
 import time
-from funciones import verify_checksum, filter_function_server, info_packet
+from funciones import verify_checksum, filter_function_server
 from scapy.all import send, sniff, IP, TCP
 
 # Variables para almacenar stats
 
 # Quiero ver tmb el tiempo que tarda en enviarse el paquete
-# Podemos poner en un csv, para cada #seq, tiempo_viaje, corrupción(1/0), demorado(1/0)
+# Podemos poner en un csv, para cada #seq, tiempo_viaje, corrupto(1/0), demorado(1/0), perdido(1/0)
+# cada vez que manda, agrega una columna con tiempo_send, #seq, y el resto en N/A; y cuando llega completa con corrupto, demorado, o perdido si no llego
+
 
 pkts_enviados = 0
 pkts_recibidos = 0
