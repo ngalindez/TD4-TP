@@ -1,8 +1,7 @@
 import canalruidoso as f  # Correr pip install canalruidoso en la terminal
-import time
 import threading
 import time
-from funciones import verify_checksum, filter_function_server, info_packet
+from funciones import verify_checksum, filter_function_server
 from scapy.all import send, sniff, IP, TCP
 
 # Variables para almacenar stats
