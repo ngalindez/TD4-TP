@@ -2,9 +2,8 @@ import canalruidoso as f  # Correr pip install canalruidoso en la terminal
 import time
 import threading
 import time
-from funciones import verify_checksum, filter_function_server
+from funciones import verify_checksum, filter_function_server, info_packet
 from scapy.all import send, sniff, IP, TCP
-import random
 
 # Variables para almacenar stats
 
@@ -26,44 +25,46 @@ init_seq = 0
 
 def enviar_paquetes():
     global pkts_enviados, tiempo_send
-    for i in range(10):
+    for i in range(50):
         ip = IP(dst=ip_, src=ip_)
-        tcp = TCP(dport=client_port, sport=server_port, seq=init_seq + i)
+        tcp = TCP(sport=client_port, dport=server_port,
+                  seq=init_seq + i, ack=0)
         pkt = ip/tcp
 
         send_time = time.time()
         tiempo_send[pkt[TCP].seq] = send_time
         pkts_enviados += 1
+
         f.envio_paquetes_inseguro(pkt)
 
-        print(f"Packet {init_seq + i} sent at {tiempo_send[pkt[TCP].seq]}")
-        time.sleep(1)  # Sleep 1 second between sends
-
-# Packet receiving thread
+        print(
+            f"Packet #{init_seq + i + 1} sent at {tiempo_send[pkt[TCP].seq]}")
 
 
 def receive_packets():
     global pkts_recibidos, pkts_demorados, pkts_corruptos, tiempo_receive
 
     def listen(pkt):
-        global pkts_recibidos, pkts_demorados
+        global pkts_recibidos, pkts_demorados, pkts_corruptos
+
         receive_time = time.time()
         tiempo_receive[pkt[TCP].seq] = receive_time
         pkts_recibidos += 1
 
         # Chequeo si llegó tarde
         if receive_time - tiempo_send[pkt[TCP].seq] > 3:
+            print('Paquete demorado')
             pkts_demorados += 1
 
         if not verify_checksum(pkt):
+            print('Paquete corrupto')
             pkts_corruptos += 1
 
         print(f"Packet #{pkt[TCP].seq} received at {receive_time}")
 
-    pkt = sniff(iface='lo0',
-                filter="tcp port 9000",
-                prn=listen,
-                timeout=30)
+    # print(f"Listening for TCP packets on port 9000 ...\n")
+    pkt = sniff(iface='lo0', prn=listen, timeout=80,
+                lfilter=filter_function_server)
 
 
 print('Arrancando...')
@@ -79,10 +80,14 @@ send_thread.join()
 receive_thread.join()
 
 # Muestro stats
-
+print('------------------------------')
 pkts_perdidos = pkts_enviados - pkts_recibidos
 
-print(f"\nPaquetes recibidos: {pkts_recibidos}")
-print(f"Paquetes demorados: {pkts_demorados}")
-print(f"Paquetes corruptos: {pkts_corruptos}")
-print(f"Paquetes perdidos: {pkts_perdidos}")
+print(f"\nPaquetes enviados: {pkts_enviados}")
+print(f"Paquetes recibidos: {pkts_recibidos}")
+print(
+    f"Paquetes demorados: {pkts_demorados} ({round(100 * pkts_demorados / pkts_recibidos, 2)}%)")
+print(
+    f"Paquetes corruptos: {pkts_corruptos} ({round(100 * pkts_corruptos / pkts_recibidos, 2)}%)")
+print(
+    f"Paquetes perdidos: {pkts_perdidos} ({round(100 * pkts_perdidos / pkts_recibidos, 2)}%)")
