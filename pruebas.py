@@ -7,6 +7,9 @@ from scapy.all import send, sniff, IP, TCP
 
 # Variables para almacenar stats
 
+# Quiero ver tmb el tiempo que tarda en enviarse el paquete
+# Podemos poner en un csv, para cada #seq, tiempo_viaje, corrupción(1/0), demorado(1/0)
+
 pkts_enviados = 0
 pkts_recibidos = 0
 pkts_demorados = 0
