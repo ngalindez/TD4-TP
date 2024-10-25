@@ -9,7 +9,7 @@ ack_ = None
 i = 0
 
 while i < 1:
-
+    # Vacio tcp_pkt y actualizo los numeros de ACK y SEQ.
     seq_ = 5
     ack_ = None
     tcp_pkt = None
@@ -30,6 +30,7 @@ while i < 1:
 
     print('Conexión establecida\n')
 
+    # Vacio tcp_pkt y actualizo los numeros de ACK y SEQ.
     rcv = tcp_pkt[0][TCP]
     ack_ = rcv.seq
     seq_ = rcv.ack
@@ -49,6 +50,7 @@ while i < 1:
     timer_ = 20
     start_time = time.time()
 
+    # Vacio tcp_pkt y actualizo los numeros de ACK y SEQ.
     rcv = tcp_pkt[0][TCP]
     ack_ = rcv.seq
     seq_ = rcv.ack
