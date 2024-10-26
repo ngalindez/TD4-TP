@@ -122,5 +122,5 @@ with open("output.csv", mode="a", newline="") as file:
     writer = csv.writer(file)
 
     # Write rows sequentially
-    for row in data:
+    for row in data[1:]:
         writer.writerow(row)
