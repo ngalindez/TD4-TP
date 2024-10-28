@@ -36,7 +36,7 @@ def filter_function_cliente(packet):
 
 
 def filter_function_server(packet):
-    return packet.haslayer(TCP) and packet[TCP].dport == 9000
+    return packet.haslayer(TCP) and packet[TCP].dport == 3000
 
 
 def escuchar(timeout_, puerto_):

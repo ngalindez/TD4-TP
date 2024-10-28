@@ -22,15 +22,15 @@ data = [['#SEQ', 'time_sent', 'time_received',
          'total_time', 'corrupto', 'demorado', 'perdido']]
 time_inicio = 0
 
-cant_paquetes = 10
+cant_paquetes = 1000
 
 
 ip_ = '127.0.0.1'
 client_port = 6000
-server_port = 9000
+server_port = 3000
 init_seq = 0
 
-# Packet sending thread
+# Thread de envío de paquetes
 
 
 def enviar_paquetes():
@@ -83,8 +83,10 @@ def receive_packets():
         print(
             f"Paquete #{pkt[TCP].seq} recibido en {round(time_received - time_inicio, 4)}s")
 
-    sniff(iface='lo0', prn=listen, timeout=cant_paquetes *
-          2, lfilter=filter_function_server)
+    sniff(iface='lo0',
+          prn=listen,
+          timeout=cant_paquetes*2,
+          lfilter=filter_function_server)
     print('Terminó de escuchar')
 
 
