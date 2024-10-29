@@ -1,7 +1,6 @@
 from scapy.all import TCP, IP
 from scapy.all import *
 import canalruidoso as f  # Correr pip install canalruidoso en la terminal
-import time
 
 
 def info_packet(packet):
@@ -18,7 +17,7 @@ def verify_checksum(packet):
     packet[TCP].chksum = None  # borro el valor viejo del paquete
     packet = packet.__class__(bytes(packet))  # recalculo el checksum
     chksum1 = packet[TCP].chksum
-    print(f"#Checksum calculado: {packet[TCP].chksum}\n")
+    # print(f"#Checksum calculado: {packet[TCP].chksum}\n")
 
     return chksum0 == chksum1
 

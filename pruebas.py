@@ -2,7 +2,7 @@ import canalruidoso as f  # Correr pip install canalruidoso en la terminal
 import threading
 import time
 import csv
-from funciones import verify_checksum, filter_function_server, filter_function
+from funciones import *
 from scapy.all import send, sniff, IP, TCP
 
 # Variables para almacenar stats
@@ -22,7 +22,7 @@ data = [['#SEQ', 'time_sent', 'time_received',
          'total_time', 'corrupto', 'demorado', 'perdido']]
 time_inicio = 0
 
-cant_paquetes = 10
+cant_paquetes = 100
 
 
 ip_ = '127.0.0.1'
@@ -45,6 +45,7 @@ def enviar_paquetes():
         time_sent = time.time()
         tiempos_sent[pkt[TCP].seq] = time_sent
         pkts_enviados += 1
+
         # perdido es 1, y si el server lo recibe, lo cambia a 0
         data.append([pkt[TCP].seq, time_sent, 0, 0, 0, 0, 1])
 
@@ -73,12 +74,12 @@ def receive_packets():
         if time_received - tiempos_sent[pkt[TCP].seq] > 3:
             print('Paquete demorado')
             pkts_demorados += 1
-            data[-1][4] = 1
+            data[-1][5] = 1
 
         if not verify_checksum(pkt):
             print('Paquete corrupto')
             pkts_corruptos += 1
-            data[-1][5] = 1
+            data[-1][4] = 1
 
         print(
             f"Paquete #{pkt[TCP].seq} recibido en {round(time_received - time_inicio, 4)}s")
@@ -120,7 +121,7 @@ print(
     f"\tPaquetes corruptos: {pkts_corruptos} ({round(100 * pkts_corruptos / pkts_recibidos, 2)}%)")
 
 
-with open("TD4-TP/output.csv", mode="a", newline="") as file:
+with open("TD4-TP/output_test.csv", mode="a", newline="") as file:
     writer = csv.writer(file)
 
     # Write rows sequentially
