@@ -2,7 +2,7 @@ import canalruidoso as f  # Correr pip install canalruidoso en la terminal
 import threading
 import time
 import csv
-from funciones import verify_checksum, filter_function_server
+from funciones import verify_checksum, filter_function_server, filter_function
 from scapy.all import send, sniff, IP, TCP
 
 # Variables para almacenar stats
@@ -22,7 +22,7 @@ data = [['#SEQ', 'time_sent', 'time_received',
          'total_time', 'corrupto', 'demorado', 'perdido']]
 time_inicio = 0
 
-cant_paquetes = 3005
+cant_paquetes = 10
 
 
 ip_ = '127.0.0.1'
@@ -86,7 +86,7 @@ def receive_packets():
     sniff(iface='lo0',
           prn=listen,
           timeout=1.6*cant_paquetes,
-          lfilter=filter_function_server)
+          lfilter=lambda pkt: filter_function(pkt, server_port))
     print('Terminó de escuchar')
 
 

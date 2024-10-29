@@ -4,13 +4,12 @@ source_ip = '127.0.0.1'
 dest_ip = '127.0.0.1'
 dest_port = 6000
 src_port = 9000
-seq_ = 5
-ack_ = None
+
 i = 0
 
 while i < 1:
     # Vacio tcp_pkt y seteo los numeros de ACK y SEQ.
-    seq_ = 5
+    seq_ = random.randint(1, 1000)
     ack_ = None
     tcp_pkt = None
 

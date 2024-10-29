@@ -31,12 +31,8 @@ def build_pkt(seq_a, ack_a, flags_, dest_ip, source_ip, dest_port, src_port):
     return packet
 
 
-def filter_function_cliente(packet):
-    return packet.haslayer(TCP) and packet[TCP].dport == 6000
-
-
-def filter_function_server(packet):
-    return packet.haslayer(TCP) and packet[TCP].dport == 3000
+def filter_function(packet, port):
+    return packet.haslayer(TCP) and packet[TCP].dport == port
 
 
 def escuchar(timeout_, puerto_):
@@ -49,6 +45,6 @@ def escuchar(timeout_, puerto_):
         prn=info_packet,
         count=1,
         timeout=timeout_,
-        lfilter=filter_function_cliente if puerto_ == 6000 else filter_function_server)
+        lfilter=lambda pkt: filter_function(pkt, puerto_))
 
     return pkt_capturado
