@@ -22,7 +22,7 @@ data = [['#SEQ', 'time_sent', 'time_received',
          'total_time', 'corrupto', 'demorado', 'perdido']]
 time_inicio = 0
 
-cant_paquetes = 100
+cant_paquetes = 1000
 
 
 ip_ = '127.0.0.1'
@@ -61,25 +61,28 @@ def receive_packets():
     def listen(pkt):
         global pkts_recibidos, pkts_demorados, pkts_corruptos
 
+        seq_num = pkt[TCP].seq
+
         time_received = time.time()
-        tiempos_rcvd[pkt[TCP].seq] = time_received
+        tiempos_rcvd[seq_num] = time_received
+        tiempo_send = tiempos_sent[seq_num]
+
+        data[seq_num][2] = time_received  # columna de 'time_received'
+        # total_time = time_received - time_sent
+        data[seq_num][3] = time_received - data[seq_num][1]
+        data[seq_num][6] = 0  # cambia la columna de perdido a 0
         pkts_recibidos += 1
 
-        data[-1][2] = time_received  # columna de 'time_received'
-        # total_time = time_received - time_sent
-        data[-1][3] = time_received - data[-1][1]
-        data[-1][6] = 0  # cambia la columna de perdido a 0
-
         # Chequeo si llegó tarde
-        if time_received - tiempos_sent[pkt[TCP].seq] > 3:
+        if time_received - tiempo_send > 3:
             print('Paquete demorado')
+            data[seq_num][5] = 1
             pkts_demorados += 1
-            data[-1][5] = 1
 
         if not verify_checksum(pkt):
             print('Paquete corrupto')
+            data[seq_num][4] = 1
             pkts_corruptos += 1
-            data[-1][4] = 1
 
         print(
             f"Paquete #{pkt[TCP].seq} recibido en {round(time_received - time_inicio, 4)}s")
@@ -93,8 +96,8 @@ def receive_packets():
 
 print('Arrancando...')
 # Creo y arranco las threads
-send_thread = threading.Thread(target=enviar_paquetes)
 receive_thread = threading.Thread(target=receive_packets)
+send_thread = threading.Thread(target=enviar_paquetes)
 
 send_thread.start()
 receive_thread.start()
@@ -120,8 +123,9 @@ print(
 print(
     f"\tPaquetes corruptos: {pkts_corruptos} ({round(100 * pkts_corruptos / pkts_recibidos, 2)}%)")
 
+data[-1][-1] = 0
 
-with open("TD4-TP/output_test.csv", mode="a", newline="") as file:
+with open("TD4-TP/output.csv", mode="a", newline="") as file:
     writer = csv.writer(file)
 
     # Write rows sequentially
