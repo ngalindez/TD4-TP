@@ -22,7 +22,7 @@ data = [['#SEQ', 'time_sent', 'time_received',
          'total_time', 'corrupto', 'demorado', 'perdido']]
 time_inicio = 0
 
-cant_paquetes = 1000
+cant_paquetes = 2002
 
 
 ip_ = '127.0.0.1'
@@ -36,7 +36,7 @@ init_seq = 0
 def enviar_paquetes():
     global pkts_enviados, tiempos_sent, data, time_inicio
     time_inicio = time.time()
-    for i in range(cant_paquetes):
+    for i in range(1, cant_paquetes + 1):
         ip = IP(dst=ip_, src=ip_)
         tcp = TCP(sport=client_port, dport=server_port,
                   seq=init_seq + i, ack=0)
@@ -89,7 +89,7 @@ def receive_packets():
 
     sniff(iface='lo0',
           prn=listen,
-          timeout=1.6*cant_paquetes,
+          timeout=1.5*cant_paquetes,
           lfilter=lambda pkt: filter_function(pkt, server_port))
     print('Terminó de escuchar')
 
@@ -123,7 +123,7 @@ print(
 print(
     f"\tPaquetes corruptos: {pkts_corruptos} ({round(100 * pkts_corruptos / pkts_recibidos, 2)}%)")
 
-data[-1][-1] = 0
+data.pop()
 
 with open("TD4-TP/output.csv", mode="a", newline="") as file:
     writer = csv.writer(file)
