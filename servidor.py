@@ -24,7 +24,7 @@ def conexion_servidor(source_ip,src_port,interface):
     # Si no llega un paquete en los tres segundos de timout o no verifica el checksum o me llega un paquete con numero
     # de ACK no esperado, vuelvo a enviar el SA.
     
-    while not correcto(tcp_pkt,seq_,ack_,dest_port,flags="A"):
+    while not correcto(tcp_pkt,seq_,ack_+1,dest_port,flags="A"):
         
         packet = build_pkt(seq_, ack_ + 1, "SA", dest_ip,
                            source_ip, dest_port, src_port)
@@ -41,14 +41,14 @@ def conexion_servidor(source_ip,src_port,interface):
     tcp_pkt = None
 
     # Espero 20 segundos para mandar el FIN.
-    timer_ = 20
+    timer_ = 3
     time.sleep(timer_)
 
     # Envio el paquete de FIN con los ACK y SEQ correspondientes y espero por el ACK de ese FIN.
     # Si llega un paquete con un ACK correcto y verifica el checksum, salgo del ciclo.
     # Si no llega un paquete en los tres segundos de timout o no verifica el checksum o me llega un paquete con numero
     # de ACK no esperado, vuelvo a enviar el F.
-    while not correcto(tcp_pkt,seq_,ack_,dest_port,flags="FA"):
+    while not correcto(tcp_pkt,seq_,ack_+1,dest_port,flags="FA"):
 
         packet = build_pkt(seq_, ack_ + 1, "F", dest_ip,
                            source_ip, dest_port, src_port)
@@ -75,18 +75,17 @@ def conexion_servidor(source_ip,src_port,interface):
 
     # El servidor escucha hasta que pasen los 20 segundos.
     while time.time() - start_time < timer_:
-
+        
+        tcp_pkt = listen(3, src_port,interface)
         # Si en esos 20 segundo le me vuelve a llegar un paquete y es el de FA del cliente (con Checksum correcto),
         # le vuelvo a enviar el A.
-        if correcto(tcp_pkt,seq_,ack_,dest_port,flags="FA"):
-
+        if tcp_pkt and TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack >= seq_ and verify_checksum(tcp_pkt[0]):
+            ack_ = rcv.seq #Si nos sigue mandando cosas, las aceptamos y pedimos las siguientes
             packet = build_pkt(seq_, ack_ + 1, "A", dest_ip,
                                source_ip, dest_port, src_port)
             f.envio_paquetes_inseguro(packet)
             print('------------------------------')
             tcp_pkt = None
-
-        tcp_pkt = listen(3, src_port,interface)
 
     # Se cierra la conexion al terminar los 20 seg.
     print('Conexión cerrada')

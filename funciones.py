@@ -57,7 +57,7 @@ def correcto(packet,seq_,ack_,dest_port,flags):
     if not verify_checksum(packet[0]):
         return False
     
-    if packet[0][TCP].ack != seq_ + 1 or packet[0][TCP].seq != ack_+1:
+    if packet[0][TCP].ack != seq_ + 1 or packet[0][TCP].seq != ack_:
         return False
     
     if packet[0][TCP].flags != flags:

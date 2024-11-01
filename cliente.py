@@ -24,7 +24,7 @@ def conexion_cliente(source_ip,dest_ip,dest_port,src_port,interface):
         print('------------------------------')
         tcp_pkt = listen(3, src_port,interface)
         if tcp_pkt:
-            ack_ = tcp_pkt[0][TCP].seq-1
+            ack_ = tcp_pkt[0][TCP].seq
 
     # Vacio tcp_pkt y actualizo los numeros de ACK y SEQ.
     rcv = tcp_pkt[0][TCP]
@@ -47,7 +47,7 @@ def conexion_cliente(source_ip,dest_ip,dest_port,src_port,interface):
         if not tcp_pkt:
             continue
         # Si me llega un paquete incorrecto, reenvío el Ack
-        if not correcto(tcp_pkt,seq_,ack_,dest_port,flags="F"):
+        if not correcto(tcp_pkt,seq_,ack_+1,dest_port,flags="F"):
 
             packet = build_pkt(seq_, ack_ + 1, "A", dest_ip,
                                source_ip, dest_port, src_port)
@@ -74,7 +74,7 @@ def conexion_cliente(source_ip,dest_ip,dest_port,src_port,interface):
 
         # Mando el FA si es la primera iteracion o en el caso de ya haberlo mandado, si epserando el ACK, 
         # no me llega un ningun paquete o con ACK menor.
-        if not correcto(tcp_pkt,seq_,ack_,dest_port,flags="A"):
+        if not correcto(tcp_pkt,seq_,ack_+1,dest_port,flags="A"):
 
             packet = build_pkt(seq_, ack_ + 1, "FA", dest_ip,
                                source_ip, dest_port, src_port)
