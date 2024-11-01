@@ -22,7 +22,7 @@ def conexion_cliente(source_ip,dest_ip,dest_port,src_port,interface):
                            source_ip, dest_port, src_port)
         f.envio_paquetes_inseguro(packet)
         print('------------------------------')
-        tcp_pkt = escuchar(3, src_port,interface)
+        tcp_pkt = listen(3, src_port,interface)
 
     # Vacio tcp_pkt y actualizo los numeros de ACK y SEQ.
     rcv = tcp_pkt[0][TCP]
@@ -40,7 +40,7 @@ def conexion_cliente(source_ip,dest_ip,dest_port,src_port,interface):
 
     while True:
         # Escucho esperando recibir el mensaje de F.
-        tcp_pkt = escuchar(3, src_port,interface)
+        tcp_pkt = listen(3, src_port,interface)
 
         # Si me llega un paquete viejo (que ya recibi), vuelvo a mandar el mensaje anterior de A del SA del servidor.
         if tcp_pkt and TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack < seq_ + 1:
@@ -101,7 +101,7 @@ def conexion_cliente(source_ip,dest_ip,dest_port,src_port,interface):
             break
         
         # escucho para esperar el ACK del FA.
-        tcp_pkt = escuchar(3, src_port,interface)
+        tcp_pkt = listen(3, src_port,interface)
         
     # Llego aca si me llego el ACK correcto con checksum correcto o se termino el timer de 60 seg 
     # y cierro la conexion de manera forzosa ya que nunca me llego el ACK.
