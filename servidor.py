@@ -23,7 +23,9 @@ def conexion_servidor(source_ip,src_port,interface):
     # Mando el primer SA y escucho. Si llega un paquete con un ACK correcto y verifica el checksum, salgo del ciclo.
     # Si no llega un paquete en los tres segundos de timout o no verifica el checksum o me llega un paquete con numero
     # de ACK no esperado, vuelvo a enviar el SA.
-    while not tcp_pkt or (TCP in tcp_pkt[0] and (tcp_pkt[0][TCP].ack < seq_ + 1 or not verify_checksum(tcp_pkt[0]))) or tcp_pkt[0][TCP].sport != dest_port:
+    
+    while not correcto(tcp_pkt,seq_,ack_,dest_port,flags="A"):
+        
         packet = build_pkt(seq_, ack_ + 1, "SA", dest_ip,
                            source_ip, dest_port, src_port)
         f.envio_paquetes_inseguro(packet)
@@ -46,7 +48,7 @@ def conexion_servidor(source_ip,src_port,interface):
     # Si llega un paquete con un ACK correcto y verifica el checksum, salgo del ciclo.
     # Si no llega un paquete en los tres segundos de timout o no verifica el checksum o me llega un paquete con numero
     # de ACK no esperado, vuelvo a enviar el F.
-    while not tcp_pkt or (TCP in tcp_pkt[0] and (tcp_pkt[0][TCP].ack < seq_ + 1 or not verify_checksum(tcp_pkt[0]))):
+    while not correcto(tcp_pkt,seq_,ack_,dest_port,flags="FA"):
 
         packet = build_pkt(seq_, ack_ + 1, "F", dest_ip,
                            source_ip, dest_port, src_port)

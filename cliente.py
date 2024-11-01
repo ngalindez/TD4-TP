@@ -11,18 +11,20 @@ interface = "lo0"
 
 def conexion_cliente(source_ip,dest_ip,dest_port,src_port,interface):
     seq_ = random.randint(1, 1000)
-    ack_ = None
+    ack_ = 0
     tcp_pkt = None
     # Mando el SYN al servidor y escucho por 3 segundos haber si me llega el SA del servidor. 
     # En caso de que no me llegue ningun paquete o que este no tengo numero de ACK correcto o no se verifique el checksum,
     # me mantengo en el ciclo y vuelvo a mandar el msj de SYN.
-    while not tcp_pkt or (TCP in tcp_pkt[0] and (tcp_pkt[0][TCP].ack < seq_ + 1 or not verify_checksum(tcp_pkt[0]))):
+    while not correcto(tcp_pkt,seq_,ack_,dest_port,flags="SA"):
         tcp_pkt = None
         packet = build_pkt(seq_, 0, "S", dest_ip,
                            source_ip, dest_port, src_port)
         f.envio_paquetes_inseguro(packet)
         print('------------------------------')
         tcp_pkt = listen(3, src_port,interface)
+        if tcp_pkt:
+            ack_ = tcp_pkt[0][TCP].seq-1
 
     # Vacio tcp_pkt y actualizo los numeros de ACK y SEQ.
     rcv = tcp_pkt[0][TCP]
@@ -42,17 +44,8 @@ def conexion_cliente(source_ip,dest_ip,dest_port,src_port,interface):
         # Escucho esperando recibir el mensaje de F.
         tcp_pkt = listen(3, src_port,interface)
 
-        # Si me llega un paquete viejo (que ya recibi), vuelvo a mandar el mensaje anterior de A del SA del servidor.
-        if tcp_pkt and TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack < seq_ + 1:
-
-            packet = build_pkt(seq_, ack_ + 1, "A", dest_ip,
-                               source_ip, dest_port, src_port)
-            f.envio_paquetes_inseguro(packet)
-            tcp_pkt = None
-            print('------------------------------')
-
-        # Si me llega un paquete con numero de ACK correcto pero con checksum mal, reenvio el A del SA del servidor.
-        elif tcp_pkt and TCP in tcp_pkt[0] and not verify_checksum(tcp_pkt[0]):
+        # Si me llega un paquete incorrecto, reenvío el Ack
+        if not correcto(tcp_pkt,seq_,ack_,dest_port,flags="F"):
 
             packet = build_pkt(seq_, ack_ + 1, "A", dest_ip,
                                source_ip, dest_port, src_port)
@@ -61,7 +54,7 @@ def conexion_cliente(source_ip,dest_ip,dest_port,src_port,interface):
             print('------------------------------')
 
         # Si me llega un paquete con ACK correcto y con checksum bien, salgo del ciclo.
-        elif tcp_pkt and TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack >= seq_ + 1:
+        else:
             break
 
     # Vacio tcp_pkt y actualizo los numeros de ACK y SEQ.
@@ -79,25 +72,15 @@ def conexion_cliente(source_ip,dest_ip,dest_port,src_port,interface):
 
         # Mando el FA si es la primera iteracion o en el caso de ya haberlo mandado, si epserando el ACK, 
         # no me llega un ningun paquete o con ACK menor.
-        if not tcp_pkt or (TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack < seq_ + 1):
+        if not correcto(tcp_pkt,seq_,ack_,dest_port,flags="A"):
 
             packet = build_pkt(seq_, ack_ + 1, "FA", dest_ip,
                                source_ip, dest_port, src_port)
             f.envio_paquetes_inseguro(packet)
             tcp_pkt = None
             print('------------------------------')
-
-        # Mando el FA si me llego un paquete con ACK correcto pero con checksum mal.
-        elif TCP in tcp_pkt[0] and not verify_checksum(tcp_pkt[0]):
-
-            packet = build_pkt(seq_, ack_ + 1, "FA", dest_ip,
-                               source_ip, dest_port, src_port)
-            f.envio_paquetes_inseguro(packet)
-            tcp_pkt = None
-            print('------------------------------')
-
         # Salgo del ciclo si me llega el ACK correcto con checksum correcto.
-        elif tcp_pkt and TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack >= seq_ + 1:
+        else:
             break
         
         # escucho para esperar el ACK del FA.

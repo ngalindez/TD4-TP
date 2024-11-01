@@ -46,3 +46,20 @@ def listen(timeout_, puerto_,interface):
         lfilter=lambda pkt: filter_function(pkt, puerto_))
 
     return pkt_capturado
+
+def correcto(packet,seq_,ack_,dest_port,flags):
+    if not packet or TCP not in packet[0]:
+        return False
+    
+    if packet[0][TCP].sport != dest_port:
+        return False
+    
+    if not verify_checksum(packet[0]):
+        return False
+    
+    if packet[0][TCP].ack != seq_ + 1 or packet[0][TCP].seq != ack_+1:
+        return False
+    
+    if packet[0][TCP].flags != flags:
+        return False
+    return True
