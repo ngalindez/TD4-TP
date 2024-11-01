@@ -43,7 +43,9 @@ def conexion_cliente(source_ip,dest_ip,dest_port,src_port,interface):
     while True:
         # Escucho esperando recibir el mensaje de F.
         tcp_pkt = listen(3, src_port,interface)
-
+        
+        if not tcp_pkt:
+            continue
         # Si me llega un paquete incorrecto, reenvío el Ack
         if not correcto(tcp_pkt,seq_,ack_,dest_port,flags="F"):
 
