@@ -1,17 +1,16 @@
 from funciones import *
+import random
 
 # Elegimos parametros
 source_ip = '127.0.0.1'
 dest_ip = '127.0.0.1'
 dest_port = 9000
 src_port = 6000
-seq_ = 500
-ack_ = None
-tcp_pkt = None
-i = 0
+interface = "lo0"
 
-while i < 1:
-    seq_ = 500
+
+def conexion_cliente(source_ip,dest_ip,dest_port,src_port,interface):
+    seq_ = random.randint(1, 1000)
     ack_ = None
     tcp_pkt = None
     # Mando el SYN al servidor y escucho por 3 segundos haber si me llega el SA del servidor. 
@@ -23,7 +22,7 @@ while i < 1:
                            source_ip, dest_port, src_port)
         f.envio_paquetes_inseguro(packet)
         print('------------------------------')
-        tcp_pkt = escuchar(3, src_port)
+        tcp_pkt = escuchar(3, src_port,interface)
 
     # Vacio tcp_pkt y actualizo los numeros de ACK y SEQ.
     rcv = tcp_pkt[0][TCP]
@@ -41,7 +40,7 @@ while i < 1:
 
     while True:
         # Escucho esperando recibir el mensaje de F.
-        tcp_pkt = escuchar(3, src_port)
+        tcp_pkt = escuchar(3, src_port,interface)
 
         # Si me llega un paquete viejo (que ya recibi), vuelvo a mandar el mensaje anterior de A del SA del servidor.
         if tcp_pkt and TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack < seq_ + 1:
@@ -102,10 +101,11 @@ while i < 1:
             break
         
         # escucho para esperar el ACK del FA.
-        tcp_pkt = escuchar(3, src_port)
+        tcp_pkt = escuchar(3, src_port,interface)
         
     # Llego aca si me llego el ACK correcto con checksum correcto o se termino el timer de 60 seg 
     # y cierro la conexion de manera forzosa ya que nunca me llego el ACK.
     print('Conexión cerrada')
 
-    i += 1
+
+conexion_cliente(source_ip=source_ip,dest_ip=dest_ip,dest_port=dest_port,src_port=src_port,interface=interface)

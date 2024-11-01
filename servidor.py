@@ -1,13 +1,13 @@
 from funciones import *
+import random
 
 source_ip = '127.0.0.1'
 dest_ip = '127.0.0.1'
 dest_port = 6000
 src_port = 9000
+interface = "lo0"
 
-i = 0
-
-while i < 1:
+def conexion_servidor(source_ip,dest_ip,dest_port,src_port,interface):
     # Vacio tcp_pkt y seteo los numeros de ACK y SEQ.
     seq_ = random.randint(1, 1000)
     ack_ = None
@@ -15,7 +15,7 @@ while i < 1:
 
     # Escucha hasta que le llegue un paquete con flag S y con checksum correcto.
     while not tcp_pkt or tcp_pkt[0][TCP].flags != "S" or not verify_checksum(tcp_pkt[0]):
-        tcp_pkt = escuchar(60, src_port)
+        tcp_pkt = escuchar(60, src_port,interface)
 
     ack_ = tcp_pkt[0][TCP].seq
     tcp_pkt = None
@@ -28,7 +28,7 @@ while i < 1:
                            source_ip, dest_port, src_port)
         f.envio_paquetes_inseguro(packet)
         print('------------------------------')
-        tcp_pkt = escuchar(3, src_port)
+        tcp_pkt = escuchar(3, src_port,interface)
 
     print('Conexión establecida\n')
 
@@ -52,7 +52,7 @@ while i < 1:
                            source_ip, dest_port, src_port)
         f.envio_paquetes_inseguro(packet)
         print('------------------------------')
-        tcp_pkt = escuchar(3, src_port)
+        tcp_pkt = escuchar(3, src_port,interface)
 
     # Pongo un timer de 20 seg para que escuche por si el el cliente requiere que le vuelva enviar el ACK de su fin,
     # cuando se termine este, se termina la conexion.
@@ -84,8 +84,9 @@ while i < 1:
             print('------------------------------')
             tcp_pkt = None
 
-        tcp_pkt = escuchar(3, src_port)
+        tcp_pkt = escuchar(3, src_port,interface)
 
     # Se cierra la conexion al terminar los 20 seg.
     print('Conexión cerrada')
-    i += 1
+
+conexion_servidor(source_ip=source_ip,dest_ip=dest_ip,dest_port=dest_port,src_port=src_port,interface=interface)

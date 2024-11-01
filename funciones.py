@@ -34,8 +34,7 @@ def filter_function(packet, port):
     return packet.haslayer(TCP) and packet[TCP].dport == port
 
 
-def escuchar(timeout_, puerto_):
-    interface = "lo0"
+def escuchar(timeout_, puerto_,interface):
 
     print(f"Listening for TCP packets on port {puerto_}...\n")
 
