@@ -80,7 +80,6 @@ def conexion_servidor(source_ip,src_port,interface):
         # Si en esos 20 segundo le me vuelve a llegar un paquete y es el de FA del cliente (con Checksum correcto),
         # le vuelvo a enviar el A.
         if tcp_pkt and TCP in tcp_pkt[0] and tcp_pkt[0][TCP].ack >= seq_ and verify_checksum(tcp_pkt[0]):
-            ack_ = rcv.seq #Si nos sigue mandando cosas, las aceptamos y pedimos las siguientes
             packet = build_pkt(seq_, ack_ + 1, "A", dest_ip,
                                source_ip, dest_port, src_port)
             f.envio_paquetes_inseguro(packet)
