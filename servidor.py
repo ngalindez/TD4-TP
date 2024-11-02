@@ -87,6 +87,7 @@ def conexion_servidor(source_ip, src_port, interface):
         # Si en esos 20 segundo le me vuelve a llegar un paquete y es el de FA del cliente (con checksum correcto),
         # le vuelvo a enviar el A.
 
+        # En este caso el seq y ack pasados son parámetros son los del ack final, por eso se resta 1 al seq (porque llega FA)
         if correcto(tcp_pkt, seq_-1, ack_, dest_port, flags='FA'):
             ack_ = rcv.seq  # Si nos sigue mandando cosas, las aceptamos y pedimos las siguientes
             packet = build_pkt(seq_, ack_ + 1, "A", dest_ip,
