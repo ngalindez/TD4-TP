@@ -43,7 +43,7 @@ def conexion_servidor(source_ip, src_port, interface):
     tcp_pkt = None
 
     # Espero 20 segundos para mandar el FIN.
-    timer_ = 5
+    timer_ = 20
     print(f'Espero {timer_} segundos...')
     time.sleep(timer_)
 
