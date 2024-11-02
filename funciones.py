@@ -17,7 +17,6 @@ def verify_checksum(packet):
     packet[TCP].chksum = None  # borro el valor viejo del paquete
     packet = packet.__class__(bytes(packet))  # recalculo el checksum
     chksum1 = packet[TCP].chksum
-    # print(f"#Checksum calculado: {packet[TCP].chksum}\n")
 
     return chksum0 == chksum1
 
@@ -34,7 +33,7 @@ def filter_function(packet, port):
     return packet.haslayer(TCP) and packet[TCP].dport == port
 
 
-def listen(timeout_, puerto_,interface):
+def listen(timeout_, puerto_, interface):
 
     print(f"Listening for TCP packets on port {puerto_}...\n")
 
@@ -47,19 +46,21 @@ def listen(timeout_, puerto_,interface):
 
     return pkt_capturado
 
-def correcto(packet,seq_,ack_,dest_port,flags):
-    if not packet or TCP not in packet[0]:
+
+def correcto(packet, seq_, ack_, dest_port=None, flags=None, first=False):
+    if not packet or not TCP in packet[0]:
         return False
-    
-    if packet[0][TCP].sport != dest_port:
+
+    if not first and packet[0][TCP].sport != dest_port:
         return False
-    
+
     if not verify_checksum(packet[0]):
         return False
-    
-    if packet[0][TCP].ack != seq_ + 1 or packet[0][TCP].seq != ack_:
+
+    if not first and (packet[0][TCP].ack != seq_ + 1 or packet[0][TCP].seq != ack_):
         return False
-    
+
     if packet[0][TCP].flags != flags:
         return False
+
     return True
