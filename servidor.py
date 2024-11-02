@@ -41,7 +41,7 @@ def conexion_servidor(source_ip,src_port,interface):
     tcp_pkt = None
 
     # Espero 20 segundos para mandar el FIN.
-    timer_ = 3
+    timer_ = 20
     time.sleep(timer_)
 
     # Envio el paquete de FIN con los ACK y SEQ correspondientes y espero por el ACK de ese FIN.
@@ -79,7 +79,7 @@ def conexion_servidor(source_ip,src_port,interface):
         tcp_pkt = listen(3, src_port,interface)
         # Si en esos 20 segundo le me vuelve a llegar un paquete y es el de FA del cliente (con Checksum correcto),
         # le vuelvo a enviar el A.
-        if correcto(tcp_pkt,seq_-1,ack_,dest_port,flags="FA"):
+        if correcto(tcp_pkt,seq_-1,ack_,dest_port,flags="FA"): #En este caso el seq y ack pasados son parámetros son los del ack final, por eso se resta 1 al seq (porque llega FA)
             packet = build_pkt(seq_, ack_ + 1, "A", dest_ip,
                                source_ip, dest_port, src_port)
             f.envio_paquetes_inseguro(packet)
